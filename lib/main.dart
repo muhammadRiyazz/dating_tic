@@ -41,9 +41,11 @@ class MyApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      themeMode: Provider.of<ThemeProvider>(context).isDarkMode 
-          ? ThemeMode.dark 
-          : ThemeMode.light,
+      themeMode: 
+      ThemeMode.dark ,
+      // Provider.of<ThemeProvider>(context).isDarkMode 
+      //     ? ThemeMode.dark 
+      //     : ThemeMode.light,
       home: const DatingIntroScreen(),
     );
   }
