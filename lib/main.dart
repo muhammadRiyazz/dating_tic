@@ -42,11 +42,14 @@ class MyApp extends StatelessWidget {
         ),
       ),
       themeMode: 
-      ThemeMode.dark ,
-      // Provider.of<ThemeProvider>(context).isDarkMode 
-      //     ? ThemeMode.dark 
-      //     : ThemeMode.light,
-      home: const DatingIntroScreen(),
+      // ThemeMode.dark ,
+      Provider.of<ThemeProvider>(context).isDarkMode 
+          ? ThemeMode.dark 
+          : ThemeMode.light,
+      home: 
+      // const DatingHomePage(),
+      
+      DatingIntroScreen(),
     );
   }
 }

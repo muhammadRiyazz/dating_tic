@@ -188,9 +188,11 @@ class _PhoneNumberPageState extends State<PhoneNumberPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _phoneController.text.length >= 10
-                      ? _sendOTP
-                      : null,
+                  onPressed:
+                  //  _phoneController.text.length >= 10
+                  //     ? 
+                      _sendOTP,
+                      // : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryRed,
                     foregroundColor: Colors.white,
@@ -200,16 +202,18 @@ class _PhoneNumberPageState extends State<PhoneNumberPage> {
                     elevation: 0,
                     shadowColor: Colors.transparent,
                   ),
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Row(
+                  child: 
+                  // _isLoading
+                  //     ? SizedBox(
+                  //         width: 24,
+                  //         height: 24,
+                  //         child: CircularProgressIndicator(
+                  //           strokeWidth: 3,
+                  //           color: Colors.white,
+                  //         ),
+                  //       )
+                  //     : 
+                      Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(

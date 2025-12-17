@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating/Theme/theme_provider.dart';
+import 'package:dating/pages/notifications_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:iconsax/iconsax.dart';
@@ -150,6 +151,77 @@ class _DiscoverPageState extends State<DiscoverPage> {
     super.dispose();
   }
 
+
+
+
+Widget _buildCategoryTabs(Color primaryRed, Color textColor,  bool isDarkMode) {
+  final List<String> categories = [
+   'All',
+  'Verified',
+  'Nearby',
+  'Call Girls',
+  'Elite',
+  'Models',
+  'Students',
+  'Sugar Dating',
+  'Casual',
+  'Serious',
+  'Friends',
+  'Travel',
+  ];
+
+  return SizedBox(
+    height: 40,
+    child: ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: categories.length,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemBuilder: (context, index) {
+        final category = categories[index];
+        // final isSelected = _selectedCategory == index;
+        
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              // _selectedCategory = index;
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: index==0
+                  ? primaryRed
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: index==0
+                    ? primaryRed
+                    : isDarkMode
+                        ? Colors.white.withOpacity(0.3)
+                        : Colors.grey.shade300,
+                width: 1.5,
+              ),
+            ),
+            child: Text(
+              category,
+              style: TextStyle(
+                color: index==0
+                    ? Colors.white
+                    : isDarkMode
+                        ? Colors.white
+                        : Colors.black,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -174,9 +246,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
             _buildAppBar(context, themeProvider, primaryRed, textColor, cardColor),
             const SizedBox(height: 12),
             
-            // Profile Progress Indicator with red theme
-            _buildProgressIndicator(primaryRed, secondaryTextColor, dividerColor),
-            const SizedBox(height: 10),
+
+         
+  _buildCategoryTabs(primaryRed, textColor,isDarkMode),
+            const SizedBox(height: 25),            // // Profile Progress Indicator with red theme
+            // _buildProgressIndicator(primaryRed, secondaryTextColor, dividerColor),
+            // const SizedBox(height: 10),
             
             // Main Swiping Area
             Expanded(
@@ -208,7 +283,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // Menu Button
           Container(
@@ -228,10 +303,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
               padding: EdgeInsets.zero,
             ),
           ),
-          
+          SizedBox(width: 15,),
           // Logo/Title
           Text(
-            'MatchFindr',
+            'WeeKend',
             style: TextStyle(
               color: primaryRed,
               fontSize: 23,
@@ -240,6 +315,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
             ),
           ),
           
+          Spacer(),
           // Theme Toggle & Notification
           Row(
             children: [
@@ -287,7 +363,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         size: 22,
                         color: primaryRed,
                       ),
-                      onPressed: () => _showNotifications(context),
+                      onPressed: () {
+
+                        Navigator.push(context, MaterialPageRoute(builder: (context) {
+                          return NotificationsPage();
+                        },));
+                      }
+                      ,
+                      
+                      
+                      // _showNotifications(context),
                       padding: EdgeInsets.zero,
                     ),
                   ),
@@ -376,8 +461,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
           controller: _cardController,
           isDisabled: false,
           isLoop: true,
-          numberOfCardsDisplayed: 2,
-          scale: 0.95,
+          numberOfCardsDisplayed: 3,
+          scale: .6,
           padding: const EdgeInsets.all(0),
           onSwipe: (previousIndex, currentIndex, direction) {
             if (direction == CardSwiperDirection.right) {

@@ -48,6 +48,11 @@ dependencies:
   video_player: ^2.10.1
   chewie: ^1.13.0
   country_code_picker: ^3.4.1
+  image_picker: ^1.2.1
+  intl: ^0.20.2
+
+  # permission_handler: ^10.4.4 # Optional for permissions
+
 
 
 dev_dependencies:

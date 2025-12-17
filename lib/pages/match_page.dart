@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating/Theme/theme_provider.dart';
+import 'package:dating/pages/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
@@ -181,7 +182,11 @@ class _MatchesPageState extends State<MatchesPage> with SingleTickerProviderStat
     
     // Theme colors
     final backgroundColor = isDarkMode ? const Color(0xFF0A0505) : const Color(0xFFFFF5F5);
-    final cardColor = isDarkMode ? const Color(0xFF1A0A0A) : Colors.white;
+  final cardColor = isDarkMode ?Colors.white.withOpacity(0.03)
+   
+    //  const Color(0xFF1A0A0A)
+     
+      : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF2A0707);
     final secondaryTextColor = isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600;
     final dividerColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200;
@@ -952,19 +957,23 @@ class _MatchesPageState extends State<MatchesPage> with SingleTickerProviderStat
 
   void _openMatchProfile(Match match) {
     // TODO: Navigate to match profile
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('${match.name}\'s Profile'),
-        content: Text('This would show ${match.name}\'s detailed profile'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+
+Navigator.push(context, MaterialPageRoute(builder:(context) {
+  return UserProfilePage( );
+}, ));
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: Text('${match.name}\'s Profile'),
+    //     content: Text('This would show ${match.name}\'s detailed profile'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.pop(context),
+    //         child: const Text('Close'),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 
   void _sendMessage(Match match) {

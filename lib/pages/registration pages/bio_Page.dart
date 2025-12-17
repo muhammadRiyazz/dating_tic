@@ -1,26 +1,33 @@
-import 'package:dating/pages/registration%20pages/location_Page.dart' show LocationPage;
+import 'package:dating/pages/registration%20pages/photos_page.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
-class WorkEducationPage extends StatefulWidget {
+class BioPage extends StatefulWidget {
   @override
-  _WorkEducationPageState createState() => _WorkEducationPageState();
+  _BioPageState createState() => _BioPageState();
 }
 
-class _WorkEducationPageState extends State<WorkEducationPage> {
-  final TextEditingController _jobController = TextEditingController();
-  String? _selectedEducation;
+class _BioPageState extends State<BioPage> {
+  final TextEditingController _bioController = TextEditingController();
   bool _isLoading = false;
+  int _charCount = 0;
+  final int _maxChars = 500;
 
-  final List<String> _educationOptions = [
-    'High School',
-    'Some College',
-    'Bachelor\'s Degree',
-    'Master\'s Degree',
-    'PhD',
-    'Trade School',
-    'Prefer not to say',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _bioController.addListener(() {
+      setState(() {
+        _charCount = _bioController.text.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _bioController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +77,7 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                 
                       // Title
                       Text(
-                        'Work & Education',
+                        'About You',
                         style: TextStyle(
                           fontSize: 28,
                           color: textColor,
@@ -82,7 +89,7 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                 
                       // Description
                       Text(
-                        'Tell us about your career and education (optional)',
+                        'Tell others about yourself (optional)',
                         style: TextStyle(
                           fontSize: 16,
                           color: hintColor,
@@ -91,147 +98,108 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                       ),
                       const SizedBox(height: 40),
                 
-                      // Job Title
-                      Text(
-                        'Job Title',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      // Bio Input Container
                       Container(
-                        height: 56,
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: borderColor,
+                            color: _bioController.text.isNotEmpty
+                                ? primaryRed.withOpacity(0.3)
+                                : borderColor,
                             width: 1.5,
                           ),
                           borderRadius: BorderRadius.circular(12),
                           color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.shade50,
                         ),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Iconsax.briefcase,
-                                  color: primaryRed,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _jobController,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: textColor,
-                                      height: 1.0, // This helps with vertical centering
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'e.g., Software Engineer',
-                                      hintStyle: TextStyle(
-                                        color: hintColor,
-                                        height: 1.0,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.zero, // Remove default padding
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                
-                      const SizedBox(height: 20),
-                
-                      // Education Level
-                      Text(
-                        'Highest Education',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: borderColor,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.shade50,
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedEducation,
-                            isExpanded: true,
-                            icon: Padding(
-                              padding: const EdgeInsets.only(right: 16),
-                              child: Icon(
-                                Iconsax.arrow_down_1,
-                                color: hintColor,
-                                size: 18,
-                              ),
-                            ),
-                            hint: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Character Count
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
                               child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Icon(
-                                    Iconsax.book_1,
-                                    color: primaryRed,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
                                   Text(
-                                    'Select education level',
+                                    'Bio',
                                     style: TextStyle(
+                                      fontSize: 14,
                                       color: hintColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$_charCount/$_maxChars',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _charCount > _maxChars 
+                                          ? Colors.red 
+                                          : hintColor,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            items: _educationOptions.map((option) {
-                              return DropdownMenuItem<String>(
-                                value: option,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Iconsax.book_1,
-                                        color: primaryRed.withOpacity(0.7),
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        option,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: textColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                
+                            // Text Field
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: TextField(
+                                controller: _bioController,
+                                maxLines: 8,
+                                maxLength: _maxChars,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: textColor,
+                                  height: 1.4,
                                 ),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedEducation = value;
-                              });
-                            },
-                          ),
+                                decoration: InputDecoration(
+                                  hintText: 'Write about yourself, interests, what you\'re looking for...',
+                                  hintStyle: TextStyle(
+                                    color: hintColor,
+                                    fontSize: 14,
+                                  ),
+                                  border: InputBorder.none,
+                                  counterText: '',
+                                ),
+                              ),
+                            ),
+                
+                            // Suggestions
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: isDark 
+                                    ? Colors.black.withOpacity(0.5) 
+                                    : Colors.grey.shade100,
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(12),
+                                  bottomRight: Radius.circular(12),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '💡 Suggestions:',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: hintColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '• What are your passions?\n• What do you enjoy doing?\n• What are you looking for?',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: hintColor,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                 
@@ -258,7 +226,7 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'This information is optional but helps with better matches',
+                                'A good bio increases your matches by 40%',
                                 style: TextStyle(
                                   color: hintColor,
                                   fontSize: 12,
@@ -272,13 +240,13 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                 
                       const SizedBox(height: 40),
                 
-                      // Continue Button
-                  
+                   
                     ],
                   ),
                 ),
               ),
-                  SizedBox(
+                 // Continue Button (can skip)
+                SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
@@ -304,14 +272,15 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Continue',
+                                _bioController.text.isEmpty
+                                    ? 'Skip'
+                                    : 'Continue',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Icon(Iconsax.arrow_right_3, size: 20),
+                             
                             ],
                           ),
                   ),
@@ -330,10 +299,11 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
     
     setState(() => _isLoading = false);
     
+    // Navigate to Photos page (final step)
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LocationPage(),
+        builder: (context) => PhotosPage(),
       ),
     );
   }

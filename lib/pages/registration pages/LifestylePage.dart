@@ -298,22 +298,15 @@ class _LifestylePageState extends State<LifestylePage> {
                                   color: Colors.white,
                                 ),
                               )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    _selectedSmoking == null && _selectedDrinking == null
-                                        ? 'Skip'
-                                        : 'Continue',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(Iconsax.arrow_right_3, size: 20),
-                                ],
+                            : Text(
+                              _selectedSmoking == null && _selectedDrinking == null
+                                  ? 'Skip'
+                                  : 'Continue',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               ),
+                            ),
                       ),
                     ),
                     const SizedBox(height: 20),
