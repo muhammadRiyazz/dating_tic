@@ -1,3 +1,4 @@
+import 'package:dating/main.dart';
 import 'package:dating/pages/registration%20pages/photos_page.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -12,6 +13,7 @@ class _BioPageState extends State<BioPage> {
   bool _isLoading = false;
   int _charCount = 0;
   final int _maxChars = 500;
+  bool _isFocused = false;
 
   @override
   void initState() {
@@ -31,233 +33,350 @@ class _BioPageState extends State<BioPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryRed = const Color(0xFFFF3B30);
-    final backgroundColor = isDark ? const Color(0xFF0A0505) : Colors.white;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final hintColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
-    final borderColor = isDark ? Colors.grey.shade800 : Colors.grey.shade300;
-
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: Padding(
-                padding: const EdgeInsets.all(32),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Back button
-                      Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: primaryRed.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: Icon(
-                                Iconsax.arrow_left_2,
-                                color: primaryRed,
-                                size: 24,
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                          const Spacer(),
-                        ],
+      backgroundColor: AppColors.deepBlack,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.neonGold.withOpacity(0.1),
+              Colors.transparent,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 25),
+
+                // Back button
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.neonGold.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 20),
-                
-                      // Title
-                      Text(
-                        'About You',
-                        style: TextStyle(
-                          fontSize: 28,
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2,
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(
+                          Iconsax.arrow_left_2,
+                          color: AppColors.neonGold,
+                          size: 24,
                         ),
+                        padding: EdgeInsets.zero,
                       ),
-                      const SizedBox(height: 8),
-                
-                      // Description
-                      Text(
-                        'Tell others about yourself (optional)',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: hintColor,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                
-                      // Bio Input Container
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: _bioController.text.isNotEmpty
-                                ? primaryRed.withOpacity(0.3)
-                                : borderColor,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.shade50,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Character Count
-                            Padding(
-                              padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Bio',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: hintColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    '$_charCount/$_maxChars',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: _charCount > _maxChars 
-                                          ? Colors.red 
-                                          : hintColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                
-                            // Text Field
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: TextField(
-                                controller: _bioController,
-                                maxLines: 8,
-                                maxLength: _maxChars,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: textColor,
-                                  height: 1.4,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Write about yourself, interests, what you\'re looking for...',
-                                  hintStyle: TextStyle(
-                                    color: hintColor,
-                                    fontSize: 14,
-                                  ),
-                                  border: InputBorder.none,
-                                  counterText: '',
-                                ),
-                              ),
-                            ),
-                
-                            // Suggestions
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: isDark 
-                                    ? Colors.black.withOpacity(0.5) 
-                                    : Colors.grey.shade100,
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(12),
-                                  bottomRight: Radius.circular(12),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '💡 Suggestions:',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: hintColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '• What are your passions?\n• What do you enjoy doing?\n• What are you looking for?',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: hintColor,
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                
-                      const SizedBox(height: 24),
-                
-                      // Optional Note
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: primaryRed.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: primaryRed.withOpacity(0.1),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Iconsax.info_circle,
-                              color: primaryRed,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'A good bio increases your matches by 40%',
-                                style: TextStyle(
-                                  color: hintColor,
-                                  fontSize: 12,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                
-                      const SizedBox(height: 40),
-                
-                   
-                    ],
+                    ),
+                    const Spacer(),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Title with gradient
+                ShaderMask(
+                  shaderCallback: (bounds) {
+                    return LinearGradient(
+                      colors: [
+                        Colors.white,
+                        AppColors.neonGold,
+                      ],
+                      stops: const [0.4, 1.0],
+                    ).createShader(bounds);
+                  },
+                  child: Text(
+                    'Your Bio',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      height: 1.1,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
-              ),
-                 // Continue Button (can skip)
+                const SizedBox(height: 8),
+
+                // Description
+                Text(
+                  'Tell others about yourself (optional)',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade400,
+                    height: 1.5,
+                  ),
+                ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 30),
+
+                        // Bio Input Container
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.cardBlack.withOpacity(0.8),
+                                AppColors.cardBlack.withOpacity(0.4),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _isFocused || _bioController.text.isNotEmpty
+                                  ? AppColors.neonGold.withOpacity(0.3)
+                                  : Colors.white.withOpacity(0.05),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header with character count
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Colors.white.withOpacity(0.05),
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.neonGold.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Iconsax.edit_2,
+                                            color: AppColors.neonGold,
+                                            size: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          'About You',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      '$_charCount/$_maxChars',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _charCount > _maxChars
+                                            ? Colors.red
+                                            : AppColors.neonGold.withOpacity(0.8),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Text Field
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: TextField(
+                                  controller: _bioController,
+                                  maxLines: 6,
+                                  maxLength: _maxChars,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Write about yourself, interests, what you\'re looking for...',
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 14,
+                                    ),
+                                    border: InputBorder.none,
+                                    counterText: '',
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      _isFocused = true;
+                                    });
+                                  },
+                                  onEditingComplete: () {
+                                    setState(() {
+                                      _isFocused = false;
+                                    });
+                                  },
+                                ),
+                              ),
+
+                              // Suggestions
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(20),
+                                    bottomRight: Radius.circular(20),
+                                  ),
+                                  border: Border(
+                                    top: BorderSide(
+                                      color: Colors.white.withOpacity(0.05),
+                                    ),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Iconsax.lamp_1,
+                                          color: AppColors.neonGold,
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Writing Tips',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.neonGold,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '• Share your passions and hobbies\n• Mention what you enjoy doing\n• Describe what you\'re looking for\n• Keep it positive and authentic',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade400,
+                                        height: 1.6,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Info card
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.neonGold.withOpacity(0.08),
+                                AppColors.neonGold.withOpacity(0.02),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.neonGold.withOpacity(0.15),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.neonGold.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Iconsax.info_circle,
+                                  color: AppColors.neonGold,
+                                  size: 14,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Boost Your Matches',
+                                      style: TextStyle(
+                                        color: AppColors.neonGold,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Profiles with bios get 40% more matches. Share something about yourself!',
+                                      style: TextStyle(
+                                        color: AppColors.neonGold.withOpacity(0.8),
+                                        fontSize: 10,
+                                        height: 1.4,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Continue button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
                     onPressed: _continue,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryRed,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.neonGold,
+                      foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                       elevation: 0,
+                      shadowColor: Colors.transparent,
+                    ).copyWith(
+                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                        (Set<MaterialState> states) {
+                          if (states.contains(MaterialState.disabled)) {
+                            return AppColors.neonGold.withOpacity(0.5);
+                          }
+                          return AppColors.neonGold;
+                        },
+                      ),
                     ),
                     child: _isLoading
                         ? SizedBox(
@@ -265,7 +384,7 @@ class _BioPageState extends State<BioPage> {
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 3,
-                              color: Colors.white,
+                              color: Colors.black,
                             ),
                           )
                         : Row(
@@ -276,16 +395,25 @@ class _BioPageState extends State<BioPage> {
                                     ? 'Skip'
                                     : 'Continue',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.black,
+                                  letterSpacing: -0.2,
                                 ),
                               ),
-                             
+                              const SizedBox(width: 10),
+                              Icon(
+                                Iconsax.arrow_right_3,
+                                size: 20,
+                                color: Colors.black,
+                              ),
                             ],
                           ),
                   ),
                 ),
-            ],
+                const SizedBox(height: 30),
+              ],
+            ),
           ),
         ),
       ),
@@ -302,8 +430,18 @@ class _BioPageState extends State<BioPage> {
     // Navigate to Photos page (final step)
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => PhotosPage(),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => PhotosPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:dating/main.dart';
 import 'package:dating/pages/registration%20pages/HeightPage.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -10,216 +11,353 @@ class GenderPage extends StatefulWidget {
 class _GenderPageState extends State<GenderPage> {
   String? _selectedGender;
   bool _isLoading = false;
+final List<Map<String, dynamic>> _genderOptions = [
+  {'value': 'man', 'label': 'Man', 'icon': Iconsax.man, 'emoji': '👨'},
+  {'value': 'woman', 'label': 'Woman', 'icon': Iconsax.woman, 'emoji': '👩'},
+  {'value': 'non_binary', 'label': 'Non-binary', 'icon': Iconsax.profile_2user, 'emoji': '⚧️'},
+  {'value': 'trans_man', 'label': 'Trans Man', 'icon': Iconsax.profile_circle, 'emoji': '🏳️‍⚧️👨'},
+  {'value': 'trans_woman', 'label': 'Trans Woman', 'icon': Iconsax.profile_circle, 'emoji': '🏳️‍⚧️👩'},
+  {'value': 'prefer_not_to_say', 'label': 'Prefer not to say', 'icon': Iconsax.eye_slash, 'emoji': '🙊'},
+];
 
-  final List<Map<String, dynamic>> _genderOptions = [
-    {'value': 'man', 'label': 'Man', 'icon': Iconsax.man},
-    {'value': 'woman', 'label': 'Woman', 'icon': Iconsax.woman},
-    {'value': 'non_binary', 'label': 'Non-binary', 'icon': Iconsax.profile_2user},
-    {'value': 'prefer_not_to_say', 'label': 'Prefer not to say', 'icon': Iconsax.eye_slash},
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryRed = const Color(0xFFFF3B30);
-    final backgroundColor = isDark ? const Color(0xFF0A0505) : Colors.white;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final hintColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
-    final borderColor = isDark ? Colors.grey.shade800 : Colors.grey.shade300;
-
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Back button
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: primaryRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(
-                        Iconsax.arrow_left_2,
-                        color: primaryRed,
-                        size: 24,
-                      ),
-                      padding: EdgeInsets.zero,
+      backgroundColor: AppColors.deepBlack,
+      body: 
+      Container(
+        decoration: BoxDecoration(  gradient: LinearGradient(
+                    colors: [
+                      AppColors.neonGold.withOpacity(0.1),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with gradient
+                Container(
+                  padding: const EdgeInsets.only(top: 20, bottom: 10),
+                  decoration: BoxDecoration(
+                  
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
                     ),
                   ),
-                  const Spacer(),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Title
-              Text(
-                'What\'s your gender?',
-                style: TextStyle(
-                  fontSize: 28,
-                  color: textColor,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Description
-              Text(
-                'Select the option that best describes you',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: hintColor,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Gender Options
-              Expanded(
-                child: ListView.separated(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: _genderOptions.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final option = _genderOptions[index];
-                    final isSelected = _selectedGender == option['value'];
-                    
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedGender = option['value'];
-                        });
-                      },
-                      child: Container(
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: isSelected 
-                              ? primaryRed.withOpacity(0.1)
-                              : isDark ? Colors.black.withOpacity(0.3) : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected 
-                                ? primaryRed.withOpacity(0.3)
-                                : borderColor,
-                            width:  .5,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Back button with glow effect
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBlack,
+                            borderRadius: BorderRadius.circular(14),
+                            // border: Border.all(
+                            //   color: AppColors.neonGold.withOpacity(0.3),
+                            //   width: 1,
+                            // ),
+                            // boxShadow: [
+                            //   BoxShadow(
+                            //     color: AppColors.neonGold.withOpacity(0.1),
+                            //     blurRadius: 8,
+                            //     spreadRadius: 1,
+                            //   ),
+                            // ],
+                          ),
+                          child: Icon(
+                            Iconsax.arrow_left_2,
+                            color: AppColors.neonGold,
+                            size: 22,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 16),
-                            Icon(
-                              option['icon'],
-                              color: isSelected ? primaryRed : hintColor,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              option['label'],
+                      ),
+                      const SizedBox(height: 30),
+        
+                      // Title with gradient text
+                      ShaderMask(
+                        shaderCallback: (bounds) {
+                          return LinearGradient(
+                            colors: [
+                              Colors.white,
+                              AppColors.neonGold,
+                            ],
+                            stops: const [0.7, 1.0],
+                          ).createShader(bounds);
+                        },
+                        child: Text(
+                          'Select Your Gender',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w900,
+                            fontStyle: FontStyle.italic,
+                            height: 1.1,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+        
+                      // Description with animated dots
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Tell us how you identify to help us show you relevant matches',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                color: isSelected ? primaryRed : textColor,
+                                fontSize: 13,
+                                color: Colors.grey.shade300,
+                                height: 1.4,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
-                            const Spacer(),
-                            if (isSelected)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 16),
-                                child: Icon(
-                                  Iconsax.tick_circle,
-                                  color: primaryRed,
-                                  size: 20,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+        
+                // Search and gender options
+                Expanded(
+                  child: Column(
+                    children: [
+                      // Search bar
+              
+                      // Gender options grid
+                      Expanded(
+                        child: GridView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 20),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 2.8,
+                          ),
+                          itemCount: _genderOptions.length,
+                          itemBuilder: (context, index) {
+                            final option = _genderOptions[index];
+                            final isSelected = _selectedGender == option['value'];
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedGender = option['value'];
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                decoration: BoxDecoration(
+                                  gradient: isSelected
+                                      ? LinearGradient(
+                                          colors: [
+                                            AppColors.neonGold.withOpacity(0.2),
+                                            AppColors.neonGold.withOpacity(0.1),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        )
+                                      : LinearGradient(
+                                          colors: [
+                                            AppColors.cardBlack.withOpacity(0.8),
+                                            AppColors.cardBlack.withOpacity(0.4),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.neonGold.withOpacity(0.0)
+                                        : Colors.white.withOpacity(0.05),
+                                    width: 1,
+                                  ),
+                            
+                                 ),
+                                child: Row(
+                                  children: [
+                                    const SizedBox(width: 10),
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? AppColors.neonGold.withOpacity(0.2)
+                                            : Colors.black.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        option['emoji'] ?? '',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        option['label'],
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? AppColors.neonGold
+                                              : Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 12),
+                                        child: Icon(
+                                          Iconsax.tick_circle,
+                                          color: AppColors.neonGold,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    const SizedBox(width: 8),
+                                  ],
                                 ),
                               ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        
+                // Security information card
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.neonGold.withOpacity(0.08),
+                        AppColors.neonGold.withOpacity(0.02),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.neonGold.withOpacity(0.15),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.neonGold.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Iconsax.lock_1,
+                          color: AppColors.neonGold,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Private & Secure',
+                              style: TextStyle(
+                                color: AppColors.neonGold,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Your gender identity is private and will only be used to improve your match recommendations',
+                              style: TextStyle(
+                                color: AppColors.neonGold.withOpacity(0.8),
+                                fontSize: 8,
+                                height: 1.4,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-
-              // Privacy Note
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: primaryRed.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: primaryRed.withOpacity(0.1),
+                    ],
                   ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Icon(
-                        Iconsax.lock,
-                        color: primaryRed,
-                        size: 14,
+        
+                // Continue button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _selectedGender != null ? _continue : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.neonGold,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                    ).copyWith(
+                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                        (Set<MaterialState> states) {
+                          if (states.contains(MaterialState.disabled)) {
+                            return AppColors.neonGold.withOpacity(0.5);
+                          }
+                          return AppColors.neonGold;
+                        },
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'This information helps us show you relevant matches',
-                        style: TextStyle(
-                          color: hintColor,
-                          fontSize: 12,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Continue Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _selectedGender != null ? _continue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryRed,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.white,
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: Colors.black,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Continue',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.black,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Icon(
+                                Iconsax.arrow_right_3,
+                                size: 20,
+                                color: Colors.black,
+                              ),
+                            ],
                           ),
-                        )
-                      : Text(
-                        'Continue',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 30),
+              ],
+            ),
           ),
         ),
       ),
@@ -235,11 +373,21 @@ class _GenderPageState extends State<GenderPage> {
     
     setState(() => _isLoading = false);
     
-    // Navigate to Looking For page
+    // Navigate to Height page
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => HeightPage(),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => HeightPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
       ),
     );
   }

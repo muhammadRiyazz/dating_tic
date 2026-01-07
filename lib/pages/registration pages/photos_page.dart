@@ -466,7 +466,7 @@ class _PhotosPageState extends State<PhotosPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => DatingHomePage(),
+        builder: (context) => WeekendHome(),
       ),
     );
   }
