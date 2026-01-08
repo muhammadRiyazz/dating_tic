@@ -1,7 +1,11 @@
+// lib/pages/registration/work_education_page.dart
 import 'package:dating/main.dart';
-import 'package:dating/pages/registration%20pages/location_Page.dart' show LocationPage;
+import 'package:dating/pages/registration%20pages/location_page.dart';
+import 'package:dating/providers/registration_data_provider.dart';
+import 'package:dating/widgets/shimmer_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
 
 class WorkEducationPage extends StatefulWidget {
   @override
@@ -10,21 +14,60 @@ class WorkEducationPage extends StatefulWidget {
 
 class _WorkEducationPageState extends State<WorkEducationPage> {
   final TextEditingController _jobController = TextEditingController();
-  String? _selectedEducation;
   bool _isLoading = false;
 
-  final List<String> _educationOptions = [
-    'High School',
-    'Some College',
-    'Bachelor\'s Degree',
-    'Master\'s Degree',
-    'PhD',
-    'Trade School',
-    'Prefer not to say',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Load education levels when page initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<RegistrationDataProvider>();
+      if (provider.educationStatus == DataLoadStatus.initial) {
+        provider.loadEducationLevels();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _jobController.dispose();
+    super.dispose();
+  }
+
+  void _continue() async {
+    final provider = context.read<RegistrationDataProvider>();
+    
+    setState(() => _isLoading = true);
+    
+    // Save job title
+    provider.jobTitle = _jobController.text.trim();
+    
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    setState(() => _isLoading = false);
+    
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => LocationPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<RegistrationDataProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
       body: Container(
@@ -49,21 +92,20 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                 // Back button
                 Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.neonGold.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.neonGold.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
                           Iconsax.arrow_left_2,
                           color: AppColors.neonGold,
                           size: 24,
                         ),
-                        padding: EdgeInsets.zero,
                       ),
                     ),
                     const Spacer(),
@@ -165,10 +207,6 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                                 decoration: BoxDecoration(
                                   color: Colors.black.withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(14),
-                                  // border: Border.all(
-                                  //   color: Colors.white.withOpacity(0.1),
-                                  //   width: 1.5,
-                                  // ),
                                 ),
                                 child: Row(
                                   children: [
@@ -195,6 +233,9 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                                           ),
                                           border: InputBorder.none,
                                         ),
+                                        onChanged: (value) {
+                                          provider.jobTitle = value.trim();
+                                        },
                                       ),
                                     ),
                                     if (_jobController.text.isNotEmpty)
@@ -203,6 +244,7 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                                         child: GestureDetector(
                                           onTap: () {
                                             _jobController.clear();
+                                            provider.jobTitle = null;
                                             setState(() {});
                                           },
                                           child: Container(
@@ -274,82 +316,118 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              Container(
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(14),
-                                  // border: Border.all(
-                                  //   color: Colors.white.withOpacity(0.1),
-                                  //   width: 1.5,
-                                  // ),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedEducation,
-                                    isExpanded: true,
-                                    icon: Padding(
-                                      padding: const EdgeInsets.only(right: 16),
-                                      child: Icon(
-                                        Iconsax.arrow_down_1,
-                                        color: AppColors.neonGold,
-                                        size: 16,
-                                      ),
-                                    ),
-                                    hint: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Iconsax.book_1,
-                                            color: AppColors.neonGold.withOpacity(0.8),
-                                            size: 18,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            'Select education level',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade500,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    items: _educationOptions.map((option) {
-                                      return DropdownMenuItem<String>(
-                                        value: option,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Iconsax.book_1,
-                                                color: AppColors.neonGold.withOpacity(0.8),
-                                                size: 18,
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Text(
-                                                option,
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ],
+
+                              // Error message
+                              if (provider.educationHasError)
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Iconsax.warning_2, color: Colors.red, size: 14),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          provider.educationError ?? 'Failed to load education levels',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 11,
                                           ),
                                         ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedEducation = value;
-                                      });
-                                    },
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
+
+                              // Loading state
+                              if (provider.educationLoading)
+                                Container(
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: ShimmerLoading(
+                                    isLoading: true,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                              // Education dropdown
+                              if (provider.educationLoaded || provider.educationIsEmpty)
+                                Container(
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: provider.selectedEducationId,
+                                      isExpanded: true,
+                                      icon: Padding(
+                                        padding: const EdgeInsets.only(right: 16),
+                                        child: Icon(
+                                          Iconsax.arrow_down_1,
+                                          color: AppColors.neonGold,
+                                          size: 16,
+                                        ),
+                                      ),
+                                      hint: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Iconsax.book_1,
+                                              color: AppColors.neonGold.withOpacity(0.8),
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              provider.educationIsEmpty
+                                                  ? 'No education levels available'
+                                                  : 'Select education level',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade500,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      items: provider.educationLevels.map((option) {
+                                        return DropdownMenuItem<String>(
+                                          value: option['eduId'].toString(),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                            child: Text(
+                                              option['eduTitle'] ?? 'Unknown',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: provider.educationIsEmpty
+                                          ? null
+                                          : (value) {
+                                              provider.selectEducation(value!);
+                                            },
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -429,7 +507,7 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _continue,
+                    onPressed: !_isLoading ? _continue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.neonGold,
                       foregroundColor: Colors.black,
@@ -484,31 +562,6 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _continue() async {
-    setState(() => _isLoading = true);
-    
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    setState(() => _isLoading = false);
-    
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => LocationPage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
       ),
     );
   }

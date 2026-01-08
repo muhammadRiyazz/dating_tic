@@ -32,30 +32,32 @@ class _PhoneNumberPageState extends State<PhoneNumberPage> {
     super.dispose();
   }
 
-  void _sendOTP() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final provider = context.read<RegistrationProvider>();
-      
-      await provider.sendPhoneNumber(
-        phone: _phoneController.text.trim(),
-        countryCode: _countryCode,
-      );
+// In the _sendOTP method of PhoneNumberPage
+void _sendOTP() async {
+  if (_formKey.currentState?.validate() ?? false) {
+    final provider = context.read<RegistrationProvider>();
+    
+    await provider.sendPhoneNumber(
+      phone: _phoneController.text.trim(),
+      countryCode: _countryCode,
+    );
 
-      if (provider.isSuccess && provider.userRegTempId != null) {
-        // Navigate to OTP page on success
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OTPVerificationPage(
-              phoneNumber: '$_countryCode ${_phoneController.text.trim()}',
-              countryCode: _countryCode,
-              userRegTempId: provider.userRegTempId!,
-            ),
+    if (provider.isSuccess && provider.userRegTempId != null) {
+      // Navigate to OTP page with user type info
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OTPVerificationPage(
+            phoneNumber: '$_countryCode ${_phoneController.text.trim()}',
+            countryCode: _countryCode,
+            userRegTempId: provider.userRegTempId!,
+            isExistingUser: provider.isExistingUser, // Pass this info
           ),
-        );
-      }
+        ),
+      );
     }
   }
+}
 
   String? _validatePhone(String? value) {
     if (value == null || value.isEmpty) {

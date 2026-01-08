@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating/pages/first_page.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
+import 'package:dating/providers/registration_data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
@@ -18,7 +19,8 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => RegistrationProvider()),
+    ChangeNotifierProvider(create: (_) => RegistrationProvider()),
+    ChangeNotifierProvider(create: (_) => RegistrationDataProvider()),        
         // Add other providers here
       ],
       child: MyApp(),

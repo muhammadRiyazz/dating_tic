@@ -1,6 +1,8 @@
+// lib/pages/registration/otp_page.dart
 import 'package:dating/main.dart';
 import 'package:dating/pages/registration%20pages/name_page.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
@@ -9,12 +11,14 @@ class OTPVerificationPage extends StatefulWidget {
   final String phoneNumber;
   final String countryCode;
   final String userRegTempId;
+  final bool isExistingUser; // Pass this from phone page
 
   const OTPVerificationPage({
     Key? key,
     required this.phoneNumber,
     required this.countryCode,
     required this.userRegTempId,
+    this.isExistingUser = false,
   }) : super(key: key);
 
   @override
@@ -24,7 +28,6 @@ class OTPVerificationPage extends StatefulWidget {
 class _OTPVerificationPageState extends State<OTPVerificationPage> {
   final List<TextEditingController> _otpControllers = List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isResending = false;
   int _timerSeconds = 30;
   bool _showResend = false;
@@ -65,6 +68,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     if (_otpControllers[index].text.isNotEmpty && index < 3) {
       _focusNodes[index + 1].requestFocus();
     }
+    
+    // Auto verify when 4 digits entered
+    if (_enteredOTP.length == 4) {
+      _verifyOTP();
+    }
   }
 
   void _startTimer() {
@@ -92,32 +100,35 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     
     // Call API to resend OTP
     final provider = context.read<RegistrationProvider>();
-    // Here you would need to call an API endpoint to resend OTP
-    // For now, we'll simulate it
-    await Future.delayed(const Duration(seconds: 1));
+    await provider.sendPhoneNumber(
+      phone: widget.phoneNumber.replaceAll(RegExp(r'\D'), ''),
+      countryCode: widget.countryCode,
+    );
     
     if (mounted) {
       setState(() => _isResending = false);
       _startTimer();
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.neonGold,
-          content: Row(
-            children: [
-              Icon(Iconsax.tick_circle5, color: Colors.black, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'OTP sent successfully',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w600,
+      if (!provider.hasError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.neonGold,
+            content: Row(
+              children: [
+                Icon(Iconsax.tick_circle5, color: Colors.black, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'OTP sent successfully',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -131,12 +142,21 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       otp: _enteredOTP,
     );
 
-    if (provider.otpIsSuccess && provider.userRegId != null) {
-      // Navigate to next page (Name/Profile) on success
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => NamePage()),
-      );
+    if (provider.otpIsSuccess) {
+      if (provider.isLoginSuccessful) {
+        // Navigate to home page for existing users
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => WeekendHome()), // Your home page
+          (route) => false,
+        );
+      } else if (provider.isRegisterSuccessful) {
+        // Navigate to name page for new users
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => NamePage()),
+        );
+      }
     }
   }
 
@@ -146,14 +166,17 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
-      body: Container( decoration: BoxDecoration(  gradient: LinearGradient(
-                    colors: [
-                      AppColors.neonGold.withOpacity(0.1),
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.neonGold.withOpacity(0.1),
+              Colors.transparent,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -184,21 +207,54 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                             ),
                           ),
                           const Spacer(),
+                          
+                          // Show user type indicator
+                          if (widget.isExistingUser)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.green.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Iconsax.user_tick5,
+                                    color: Colors.green,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Existing User',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 20),
-                         ShaderMask(
+                      
+                      // Title
+                      ShaderMask(
                         shaderCallback: (bounds) {
                           return LinearGradient(
                             colors: [
                               Colors.white,
-                              AppColors.neonGold,
+                              widget.isExistingUser ? Colors.green : AppColors.neonGold,
                             ],
                             stops: const [0.7, 1.0],
                           ).createShader(bounds);
                         },
                         child: Text(
-                        'Enter verification code',
+                          widget.isExistingUser 
+                            ? 'Welcome Back!' 
+                            : 'Enter verification code',
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
@@ -208,11 +264,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                           ),
                         ),
                       ),
-                      // Title
-                     
                       const SizedBox(height: 8),
                       
-                      // Phone number display
+                      // Dynamic message based on user type
                       RichText(
                         text: TextSpan(
                           style: TextStyle(
@@ -222,17 +276,35 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                             fontWeight: FontWeight.w500,
                           ),
                           children: [
-                            const TextSpan(text: 'Code sent to '),
+                            TextSpan(
+                              text: widget.isExistingUser
+                                ? 'Enter OTP to login to '
+                                : 'Code sent to ',
+                            ),
                             TextSpan(
                               text: widget.phoneNumber,
                               style: TextStyle(
-                                color: AppColors.neonGold,
+                                color: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
                         ),
                       ),
+                      
+                      // Additional message for existing users
+                      if (widget.isExistingUser) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'You already have an account with us',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.green.withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                      
                       const SizedBox(height: 40),
                       
                       // Error message if any
@@ -282,9 +354,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               maxLength: 1,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 28,
-                                color: Colors.white,
+                                color: widget.isExistingUser ? Colors.green : Colors.white,
                                 fontWeight: FontWeight.w900,
                               ),
                               decoration: InputDecoration(
@@ -293,7 +365,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
                                     color: _otpControllers[index].text.isNotEmpty
-                                        ? AppColors.neonGold
+                                        ? widget.isExistingUser ? Colors.green : AppColors.neonGold
                                         : Colors.white.withOpacity(0.2),
                                     width: 1.5,
                                   ),
@@ -301,7 +373,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: AppColors.neonGold,
+                                    color: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                                     width: 2.5,
                                   ),
                                 ),
@@ -309,14 +381,14 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
                                     color: _otpControllers[index].text.isNotEmpty
-                                        ? AppColors.neonGold.withOpacity(0.6)
+                                        ? (widget.isExistingUser ? Colors.green : AppColors.neonGold).withOpacity(0.6)
                                         : Colors.white.withOpacity(0.2),
                                     width: 1.5,
                                   ),
                                 ),
                                 filled: true,
                                 fillColor: _otpControllers[index].text.isNotEmpty
-                                    ? AppColors.neonGold.withOpacity(0.1)
+                                    ? (widget.isExistingUser ? Colors.green : AppColors.neonGold).withOpacity(0.1)
                                     : AppColors.cardBlack,
                               ),
                               onChanged: (value) {
@@ -362,7 +434,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                             : TextButton(
                                 onPressed: _isResending ? null : _resendOTP,
                                 style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.neonGold,
+                                  foregroundColor: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -373,20 +445,20 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                         height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          color: AppColors.neonGold,
+                                          color: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                                         ),
                                       )
                                     else
                                       Icon(
                                         Iconsax.refresh5,
-                                        color: AppColors.neonGold,
+                                        color: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                                         size: 16,
                                       ),
                                     const SizedBox(width: 6),
                                     Text(
                                       _isResending ? 'Resending...' : 'Resend code',
                                       style: TextStyle(
-                                        color: AppColors.neonGold,
+                                        color: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -401,26 +473,34 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.neonGold.withOpacity(0.05),
+                          color: widget.isExistingUser 
+                            ? Colors.green.withOpacity(0.05) 
+                            : AppColors.neonGold.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.neonGold.withOpacity(0.2),
+                            color: widget.isExistingUser 
+                              ? Colors.green.withOpacity(0.2) 
+                              : AppColors.neonGold.withOpacity(0.2),
                           ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
-                              Iconsax.info_circle5,
-                              color: AppColors.neonGold,
+                              widget.isExistingUser ? Iconsax.user_tick5 : Iconsax.info_circle5,
+                              color: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                               size: 16,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Enter the 4-digit code sent to your phone',
+                                widget.isExistingUser
+                                  ? 'Enter OTP to login to your existing account'
+                                  : 'Enter the 4-digit code to continue registration',
                                 style: TextStyle(
-                                  color: AppColors.neonGold.withOpacity(0.9),
+                                  color: widget.isExistingUser 
+                                    ? Colors.green.withOpacity(0.9) 
+                                    : AppColors.neonGold.withOpacity(0.9),
                                   fontSize: 12,
                                   height: 1.4,
                                   fontWeight: FontWeight.w500,
@@ -434,20 +514,22 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   ),
                 ),
                 
-                // Verify Button
+                // Verify/Login Button with dynamic text
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
                     onPressed: _enteredOTP.length == 4 && !provider.otpIsLoading ? _verifyOTP : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.neonGold,
+                      backgroundColor: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 5,
-                      shadowColor: AppColors.neonGold.withOpacity(0.3),
+                      shadowColor: widget.isExistingUser 
+                        ? Colors.green.withOpacity(0.3) 
+                        : AppColors.neonGold.withOpacity(0.3),
                     ),
                     child: provider.otpIsLoading
                         ? SizedBox(
@@ -459,7 +541,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                             ),
                           )
                         : Text(
-                            'Verify',
+                            widget.isExistingUser ? 'Login' : 'Continue Registration',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
