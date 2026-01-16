@@ -1,6 +1,7 @@
 // lib/pages/registration/work_education_page.dart
 import 'package:dating/main.dart';
-import 'package:dating/pages/registration%20pages/location_page.dart';
+import 'package:dating/models/user_registration_model.dart';
+import 'package:dating/pages/registration%20pages/location_Page.dart';
 import 'package:dating/providers/registration_data_provider.dart';
 import 'package:dating/widgets/shimmer_loading.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,13 @@ import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 
 class WorkEducationPage extends StatefulWidget {
+  const WorkEducationPage({
+       super.key,
+    required this.userdata,
+  });
+
+  final UserRegistrationModel userdata;
+
   @override
   _WorkEducationPageState createState() => _WorkEducationPageState();
 }
@@ -34,35 +42,39 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
     super.dispose();
   }
 
-  void _continue() async {
-    final provider = context.read<RegistrationDataProvider>();
-    
-    setState(() => _isLoading = true);
-    
-    // Save job title
-    provider.jobTitle = _jobController.text.trim();
-    
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    setState(() => _isLoading = false);
-    
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => LocationPage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
+ // Fix in WorkEducationPage (_continue method)
+void _continue() async {
+  final provider = context.read<RegistrationDataProvider>();
+  
+  setState(() => _isLoading = true);
+  await Future.delayed(const Duration(milliseconds: 500));
+  setState(() => _isLoading = false);
+  
+  // Create updated data with job and education
+  final UserRegistrationModel data = widget.userdata.copyWith(
+    job: provider.jobTitle,
+    education: provider.selectedEducationId,
+  );
+
+  Navigator.push(
+    context,
+    PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => LocationRegistrationPage(
+        userdata: data, // Pass the data!
       ),
-    );
-  }
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(1.0, 0.0);
+        const end = Offset.zero;
+        const curve = Curves.easeInOut;
+        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      },
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +141,7 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
+                      // fontStyle: FontStyle.italic,
                       height: 1.1,
                       letterSpacing: -0.5,
                     ),

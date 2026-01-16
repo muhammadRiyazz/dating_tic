@@ -34,6 +34,13 @@ class RegistrationDataProvider extends ChangeNotifier {
   // Job title
   String? _jobTitle;
 
+  // Interests
+  DataLoadStatus _interestsStatus = DataLoadStatus.initial;
+  List<Map<String, dynamic>> _interests = [];
+  String? _interestsError;
+  List<String> _selectedInterestIds = [];
+  List<String> _selectedInterestNames = [];
+
   // Getters for relationship goals
   DataLoadStatus get goalsStatus => _goalsStatus;
   List<Map<String, dynamic>> get goals => _goals;
@@ -64,6 +71,20 @@ class RegistrationDataProvider extends ChangeNotifier {
   bool get educationHasError => _educationStatus == DataLoadStatus.error;
   bool get educationIsEmpty => _educationStatus == DataLoadStatus.empty;
   
+  // Getters for interests
+  DataLoadStatus get interestsStatus => _interestsStatus;
+  List<Map<String, dynamic>> get interests => _interests;
+  String? get interestsError => _interestsError;
+  List<String> get selectedInterestIds => _selectedInterestIds;
+  List<String> get selectedInterestNames => _selectedInterestNames;
+  bool get interestsLoading => _interestsStatus == DataLoadStatus.loading;
+  bool get interestsLoaded => _interestsStatus == DataLoadStatus.success;
+  bool get interestsHasError => _interestsStatus == DataLoadStatus.error;
+  bool get interestsIsEmpty => _interestsStatus == DataLoadStatus.empty;
+  int get selectedInterestsCount => _selectedInterestIds.length;
+  bool get hasMinimumInterests => _selectedInterestIds.length >= 3;
+  bool get hasMaximumInterests => _selectedInterestIds.length >= 10;
+  
   // Job title getter/setter
   String? get jobTitle => _jobTitle;
   set jobTitle(String? value) {
@@ -88,6 +109,12 @@ class RegistrationDataProvider extends ChangeNotifier {
     _educationError = null;
     _selectedEducationId = null;
     
+    _interestsStatus = DataLoadStatus.initial;
+    _interests = [];
+    _interestsError = null;
+    _selectedInterestIds = [];
+    _selectedInterestNames = [];
+    
     _jobTitle = null;
     
     notifyListeners();
@@ -98,12 +125,14 @@ class RegistrationDataProvider extends ChangeNotifier {
     _selectedGoalId = null;
     _selectedGenderId = null;
     _selectedEducationId = null;
+    _selectedInterestIds = [];
+    _selectedInterestNames = [];
     _jobTitle = null;
     notifyListeners();
   }
 
   // Load relationship goals
-  Future<void> loadRelationshipGoals() async {
+  Future<void> loadRelationshipGoals(String genderId) async {
     if (_goalsStatus == DataLoadStatus.loading) return;
     
     _goalsStatus = DataLoadStatus.loading;
@@ -111,7 +140,7 @@ class RegistrationDataProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _service.getRelationshipGoals();
+      final response = await _service.getRelationshipGoals(genderId);
       
       if (response.success && response.data != null) {
         _goals = response.data!;
@@ -180,6 +209,32 @@ class RegistrationDataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Load interests
+  Future<void> loadInterests() async {
+    if (_interestsStatus == DataLoadStatus.loading) return;
+    
+    _interestsStatus = DataLoadStatus.loading;
+    _interestsError = null;
+    notifyListeners();
+    
+    try {
+      final response = await _service.getInterests();
+      
+      if (response.success && response.data != null) {
+        _interests = response.data!;
+        _interestsStatus = _interests.isEmpty ? DataLoadStatus.empty : DataLoadStatus.success;
+      } else {
+        _interestsStatus = DataLoadStatus.error;
+        _interestsError = response.error;
+      }
+    } catch (e) {
+      _interestsStatus = DataLoadStatus.error;
+      _interestsError = 'Failed to load: $e';
+    }
+    
+    notifyListeners();
+  }
+
   // Set selected goal
   void selectGoal(String goalId) {
     _selectedGoalId = goalId;
@@ -196,6 +251,32 @@ class RegistrationDataProvider extends ChangeNotifier {
   void selectEducation(String educationId) {
     _selectedEducationId = educationId;
     notifyListeners();
+  }
+
+  // Toggle interest selection
+  void toggleInterest(String interestId, String interestName) {
+    if (_selectedInterestIds.contains(interestId)) {
+      _selectedInterestIds.remove(interestId);
+      _selectedInterestNames.remove(interestName);
+    } else {
+      if (_selectedInterestIds.length < 10) {
+        _selectedInterestIds.add(interestId);
+        _selectedInterestNames.add(interestName);
+      }
+    }
+    notifyListeners();
+  }
+
+  // Clear all selected interests
+  void clearSelectedInterests() {
+    _selectedInterestIds.clear();
+    _selectedInterestNames.clear();
+    notifyListeners();
+  }
+
+  // Check if interest is selected
+  bool isInterestSelected(String interestId) {
+    return _selectedInterestIds.contains(interestId);
   }
 
   // Get selected goal details
@@ -232,6 +313,7 @@ class RegistrationDataProvider extends ChangeNotifier {
   // Validate form
   bool validateGenderPage() => isGenderSelected;
   bool validateGoalsPage() => isGoalSelected;
+  bool validateInterestsPage() => _selectedInterestIds.length >= 3;
   
   // Get summary data for API submission
   Map<String, dynamic> getRegistrationData() {
@@ -240,6 +322,7 @@ class RegistrationDataProvider extends ChangeNotifier {
       'goalId': _selectedGoalId,
       'educationId': _selectedEducationId,
       'jobTitle': _jobTitle,
+      'interestIds': _selectedInterestIds,
     };
   }
 }

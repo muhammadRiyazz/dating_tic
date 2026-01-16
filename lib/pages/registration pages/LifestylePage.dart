@@ -1,9 +1,18 @@
 import 'package:dating/main.dart';
+import 'package:dating/models/user_registration_model.dart';
+import 'package:dating/pages/registration%20pages/location_Page.dart';
 import 'package:dating/pages/registration%20pages/relationship_goals_Page.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
 class LifestylePage extends StatefulWidget {
+  const LifestylePage({
+       super.key,
+    required this.userdata,
+  });
+
+  final UserRegistrationModel userdata;
+
   @override
   _LifestylePageState createState() => _LifestylePageState();
 }
@@ -93,7 +102,7 @@ class _LifestylePageState extends State<LifestylePage> {
                             style: TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.w900,
-                              fontStyle: FontStyle.italic,
+                              // fontStyle: FontStyle.italic,
                               height: 1.1,
                               letterSpacing: -0.5,
                             ),
@@ -385,17 +394,22 @@ class _LifestylePageState extends State<LifestylePage> {
   }
 
   void _continue() async {
-    setState(() => _isLoading = true);
     
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    setState(() => _isLoading = false);
-    
+
+
+
+ final UserRegistrationModel data = widget.userdata.copyWith(
+    drinkingHabit:_selectedDrinking,
+    smokingHabit: _selectedSmoking
+  );
+
+
+
     // Navigate to next page (Bio or Location)
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RelationshipGoalsPage(), // Or LocationPage
+        builder: (context) => RelationshipGoalsPage( userdata: data,),
       ),
     );
   }

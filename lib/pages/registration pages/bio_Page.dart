@@ -1,9 +1,17 @@
 import 'package:dating/main.dart';
+import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/registration%20pages/photos_page.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
 class BioPage extends StatefulWidget {
+  const BioPage({
+       super.key,
+    required this.userdata,
+  });
+
+  final UserRegistrationModel userdata;
+
   @override
   _BioPageState createState() => _BioPageState();
 }
@@ -95,7 +103,7 @@ class _BioPageState extends State<BioPage> {
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
+                      // fontStyle: FontStyle.italic,
                       height: 1.1,
                       letterSpacing: -0.5,
                     ),
@@ -421,17 +429,19 @@ class _BioPageState extends State<BioPage> {
   }
 
   void _continue() async {
-    setState(() => _isLoading = true);
-    
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    setState(() => _isLoading = false);
-    
+ 
+
+
+  final UserRegistrationModel data = widget.userdata.copyWith(
+    bio:_bioController.text,
+  );
+
+
     // Navigate to Photos page (final step)
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => PhotosPage(),
+        pageBuilder: (context, animation, secondaryAnimation) => PhotosPage(userdata: data,),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

@@ -28,6 +28,55 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+
+	<!-- Network & Security Settings -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>amazonaws.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- Location Permissions -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to find nearby matches and show them on the map.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to find nearby matches even when the app is in the background.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>This app needs access to your location to function correctly.</string>
+
+	<!-- Camera & Photo Gallery Permissions -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take profile photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to select profile photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs permission to save processed profile photos to your gallery.</string>
+	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
+
+	<!-- Face Detection & ML Kit Permissions -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>This app analyzes facial features in photos to ensure clear and safe profile images.</string>
+	<key>NSVisionUsageDescription</key>
+	<string>This app analyzes uploaded images to detect faces and blur inappropriate content for user safety.</string>
+
+	<!-- Orientation Settings -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -41,9 +90,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+
+	<!-- Notification Background Modes (Optional but recommended for location apps) -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

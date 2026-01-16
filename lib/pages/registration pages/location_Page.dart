@@ -1,4 +1,6 @@
 import 'package:dating/main.dart';
+import 'package:dating/models/user_registration_model.dart';
+import 'package:dating/pages/registration%20pages/Interests_Page.dart';
 import 'package:dating/pages/registration%20pages/bio_Page.dart';
 import 'package:dating/services/location_service.dart';
 import 'package:flutter/material.dart';
@@ -11,14 +13,19 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:ui';
 
-class LocationPage extends StatefulWidget {
-  const LocationPage({super.key});
+class LocationRegistrationPage extends StatefulWidget {
+  const LocationRegistrationPage({
+       super.key,
+    required this.userdata,
+  });
+
+  final UserRegistrationModel userdata;
 
   @override
-  State<LocationPage> createState() => _LocationPageState();
+  State<LocationRegistrationPage> createState() => _LocationRegistrationPageState();
 }
 
-class _LocationPageState extends State<LocationPage> {
+class _LocationRegistrationPageState extends State<LocationRegistrationPage> {
   // --- Controllers & Focus ---
   final TextEditingController _locationController = TextEditingController();
   final FocusNode _locationFocusNode = FocusNode();
@@ -315,7 +322,8 @@ class _LocationPageState extends State<LocationPage> {
                       'Set Your Location',
                       style: TextStyle(
                         fontSize: 30, fontWeight: FontWeight.w900,
-                        fontStyle: FontStyle.italic, height: 1.1, letterSpacing: -0.5,
+                        // fontStyle: FontStyle.italic,
+                         height: 1.1, letterSpacing: -0.5,
                       ),
                     ),
                   ),
@@ -523,8 +531,23 @@ class _LocationPageState extends State<LocationPage> {
 
   void _continue() {
     setState(() => _isLoading = true);
+
+
+
+ final UserRegistrationModel data = widget.userdata.copyWith(
+latitude: selectedLat,
+longitude: selectedLng,
+city: selectedCity,
+country: "IN"
+
+  );
+
+
+
     Future.delayed(const Duration(milliseconds: 500), () {
-       Navigator.push(context, MaterialPageRoute(builder: (context) =>  BioPage()));
+      
+             Navigator.push(context, MaterialPageRoute(builder: (context) =>  InterestsPage( userdata: data,)));
+
        setState(() => _isLoading = false);
     });
   }

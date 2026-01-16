@@ -243,7 +243,7 @@ class _DatingIntroScreenState extends State<DatingIntroScreen> {
             style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 15, height: 1.4),
           ),
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30),
           child: SizedBox(
@@ -258,32 +258,31 @@ class _DatingIntroScreenState extends State<DatingIntroScreen> {
               ),
               onPressed: _handleGetStarted,
               child: _isLoadingLocation
-                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.black))
-                  : const Text("Get Started", style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                  : const Text("Get Started", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             ),
           ),
         ),
-        const SizedBox(height: 30),
-        AnimatedOpacity(
-          opacity: _isLoadingLocation ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 300),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Column(
-              children: [
-                Text("📍 Verifying location permissions...", textAlign: TextAlign.center, style: TextStyle(color: AppColors.neonGold.withOpacity(0.8), fontSize: 12)),
-                const SizedBox(height: 8),
-                Container(
-                  width: 100, height: 4,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [AppColors.neonGold.withOpacity(0.5), AppColors.neonGold, AppColors.neonGold.withOpacity(0.5)]),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        // AnimatedOpacity(
+        //   opacity: _isLoadingLocation ? 1.0 : 0.0,
+        //   duration: const Duration(milliseconds: 300),
+        //   child: Padding(
+        //     padding: const EdgeInsets.symmetric(horizontal: 40),
+        //     child: Column(
+        //       children: [
+        //         Text("📍 Verifying location permissions...", textAlign: TextAlign.center, style: TextStyle(color: AppColors.neonGold.withOpacity(0.8), fontSize: 12)),
+        //         const SizedBox(height: 8),
+        //         Container(
+        //           width: 100, height: 4,
+        //           decoration: BoxDecoration(
+        //             gradient: LinearGradient(colors: [AppColors.neonGold.withOpacity(0.5), AppColors.neonGold, AppColors.neonGold.withOpacity(0.5)]),
+        //             borderRadius: BorderRadius.circular(2),
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
         const SizedBox(height: 30),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),

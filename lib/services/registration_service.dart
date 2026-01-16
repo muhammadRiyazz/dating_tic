@@ -1,7 +1,11 @@
 // lib/services/registration_service.dart
 import 'dart:convert';
 import 'dart:developer';
+import 'package:dating/providers/profile_provider.dart';
+import 'package:dating/services/auth_service.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class ApiResponse<T> {
   final bool success;
@@ -25,19 +29,20 @@ class ApiResponse<T> {
   });
 }
 
-
-
-
-
 class RegistrationDataService {
   static const String _baseUrl = 'https://tictechnologies.in/stage/weekend';
 
   // Get Relationship Goals
-  Future<ApiResponse<List<Map<String, dynamic>>>> getRelationshipGoals() async {
+  Future<ApiResponse<List<Map<String, dynamic>>>> getRelationshipGoals(String genderId) async {
     try {
       final url = Uri.parse('$_baseUrl/relationship-goal');
-      final response = await http.post(url);
-
+      log(genderId);
+      final response = await http.post(
+        url,
+        body: {
+          'genderId': genderId,
+        },
+      );
       log('Relationship goals response: ${response.body}');
 
       if (response.statusCode == 200) {
@@ -157,7 +162,50 @@ class RegistrationDataService {
       );
     }
   }
+
+  // Get Interests
+  Future<ApiResponse<List<Map<String, dynamic>>>> getInterests() async {
+    try {
+      final url = Uri.parse('$_baseUrl/interests');
+      final response = await http.post(url);
+
+      log('Interests response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        
+        if (jsonResponse['status'] == 'SUCCESS') {
+          final List<dynamic> data = jsonResponse['data'];
+          return ApiResponse(
+            success: true,
+            data: data.map((item) => Map<String, dynamic>.from(item)).toList(),
+            statusDesc: jsonResponse['statusDesc'],
+            statusCode: jsonResponse['statusCode'],
+          );
+        } else {
+          return ApiResponse(
+            success: false,
+            error: jsonResponse['statusDesc'] ?? 'Failed to fetch interests',
+            statusDesc: jsonResponse['statusDesc'],
+            statusCode: jsonResponse['statusCode'],
+          );
+        }
+      } else {
+        return ApiResponse(
+          success: false,
+          error: 'Server error: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      log('Interests error: $e');
+      return ApiResponse(
+        success: false,
+        error: 'Network error: $e',
+      );
+    }
+  }
 }
+
 class RegistrationService {
   static const String _baseUrl = 'https://tictechnologies.in/stage/weekend';
 
@@ -266,8 +314,13 @@ class RegistrationService {
       );
     }
   }
+}Future<void> fetchprofiles(BuildContext context)async{
+final authService = AuthService();
+    final userId = await authService.getUserId();
 
-
-
-  
+    // 2. If we have a userId, trigger the Home API call immediately
+    if (userId != null ) {
+      // ignore: use_build_context_synchronously
+      Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
+    }
 }

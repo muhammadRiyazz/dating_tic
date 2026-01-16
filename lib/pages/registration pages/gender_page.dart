@@ -1,5 +1,7 @@
 // lib/pages/registration/gender_page.dart
 import 'package:dating/main.dart';
+import 'package:dating/models/user_registration_model.dart';
+import 'package:dating/pages/registration%20pages/HeightPage.dart';
 import 'package:dating/pages/registration%20pages/relationship_goals_page.dart';
 import 'package:dating/providers/registration_data_provider.dart';
 import 'package:dating/widgets/shimmer_loading.dart';
@@ -8,6 +10,13 @@ import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 
 class GenderPage extends StatefulWidget {
+  const GenderPage({
+     super.key,
+    required this.userdata,
+  });
+
+  final UserRegistrationModel userdata;
+
   @override
   _GenderPageState createState() => _GenderPageState();
 }
@@ -27,42 +36,28 @@ class _GenderPageState extends State<GenderPage> {
     });
   }
 
-  void _continue() async {
-    final provider = context.read<RegistrationDataProvider>();
-    
-    if (!provider.validateGenderPage()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Please select your gender'),
-        ),
-      );
-      return;
-    }
-    
-    setState(() => _isLoading = true);
-    
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    setState(() => _isLoading = false);
-    
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => RelationshipGoalsPage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
+void _continue() async {
+  final provider = context.read<RegistrationDataProvider>();
+  
+  if (!provider.validateGenderPage()) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text('Please select your gender'),
       ),
     );
+    return;
   }
+  
+  final UserRegistrationModel data = widget.userdata.copyWith(
+    gender: provider.selectedGenderId,
+  );
+
+ Navigator.push(context, MaterialPageRoute(builder:(context) {
+   return HeightPage( userdata: data,) ;
+ }, ));
+
+}
 
   @override
   Widget build(BuildContext context) {
@@ -97,18 +92,18 @@ class _GenderPageState extends State<GenderPage> {
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBlack,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            Iconsax.arrow_left_2,
-                            color: AppColors.neonGold,
-                            size: 22,
-                          ),
-                        ),
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.neonGold.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Iconsax.arrow_left_2,
+                                  color: AppColors.neonGold,
+                                  size: 24,
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 30),
 
@@ -128,7 +123,7 @@ class _GenderPageState extends State<GenderPage> {
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
-                            fontStyle: FontStyle.italic,
+                            // fontStyle: FontStyle.italic,
                             height: 1.1,
                             letterSpacing: -0.5,
                           ),

@@ -1,7 +1,12 @@
 // lib/pages/registration/otp_page.dart
+import 'dart:developer';
+
 import 'package:dating/main.dart';
+import 'package:dating/models/user_registration_model.dart';
+import 'package:dating/pages/home/home_screen.dart';
 import 'package:dating/pages/registration%20pages/name_page.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
+import 'package:dating/services/auth_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -132,33 +137,49 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     }
   }
 
-  void _verifyOTP() async {
-    if (_enteredOTP.length != 4) return;
-    
-    final provider = context.read<RegistrationProvider>();
-    
-    await provider.verifyOTP(
-      userRegTempId: widget.userRegTempId,
-      otp: _enteredOTP,
-    );
+void _verifyOTP() async {
+  if (_enteredOTP.length != 4) return;
+  
+  final provider = context.read<RegistrationProvider>();
+  
+  await provider.verifyOTP(
+    userRegTempId: widget.userRegTempId,
+    otp: _enteredOTP,
+  );
 
-    if (provider.otpIsSuccess) {
-      if (provider.isLoginSuccessful) {
-        // Navigate to home page for existing users
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => WeekendHome()), // Your home page
-          (route) => false,
-        );
-      } else if (provider.isRegisterSuccessful) {
-        // Navigate to name page for new users
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => NamePage()),
-        );
-      }
+  if (provider.otpIsSuccess) {
+    if (provider.isLoginSuccessful) {
+      // Save login state for existing users
+      final authService = AuthService();
+      await authService.login(
+        userId: provider.userId.toString(),
+        phone: widget.phoneNumber,
+      );
+      
+      // Navigate to home page for existing users
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const WeekendHome()),
+        (route) => false,
+      );
+    } else if (provider.isRegisterSuccessful) {
+      log('provider --- userId ---');
+      log(provider.userId.toString());
+
+      // Create model with userId
+      final UserRegistrationModel userdata = UserRegistrationModel().copyWith(
+        userRegId: provider.userId,
+      );
+
+      log(userdata.userRegId.toString());
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => NamePage(userdata: userdata)),
+      );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -258,7 +279,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
-                            fontStyle: FontStyle.italic,
+                            // fontStyle: FontStyle.italic,
                             height: 1.1,
                             letterSpacing: -0.5,
                           ),
@@ -374,7 +395,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
                                     color: widget.isExistingUser ? Colors.green : AppColors.neonGold,
-                                    width: 2.5,
+                                    width: .5,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
@@ -382,7 +403,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                   borderSide: BorderSide(
                                     color: _otpControllers[index].text.isNotEmpty
                                         ? (widget.isExistingUser ? Colors.green : AppColors.neonGold).withOpacity(0.6)
-                                        : Colors.white.withOpacity(0.2),
+                                        : Colors.white.withOpacity(0.0),
                                     width: 1.5,
                                   ),
                                 ),
@@ -477,11 +498,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                             ? Colors.green.withOpacity(0.05) 
                             : AppColors.neonGold.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: widget.isExistingUser 
-                              ? Colors.green.withOpacity(0.2) 
-                              : AppColors.neonGold.withOpacity(0.2),
-                          ),
+                          // border: Border.all(
+                          //   color: widget.isExistingUser 
+                          //     ? Colors.green.withOpacity(0.2) 
+                          //     : AppColors.neonGold.withOpacity(0.2),
+                          // ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,

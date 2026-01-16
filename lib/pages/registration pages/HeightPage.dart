@@ -1,9 +1,17 @@
 import 'package:dating/main.dart';
+import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/registration%20pages/LifestylePage.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
 class HeightPage extends StatefulWidget {
+  const HeightPage({
+      super.key,
+    required this.userdata,
+  });
+
+  final UserRegistrationModel userdata;
+
   @override
   _HeightPageState createState() => _HeightPageState();
 }
@@ -87,29 +95,18 @@ class _HeightPageState extends State<HeightPage> {
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBlack,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: AppColors.neonGold.withOpacity(0.3),
-                              width: 1,
-                            ),
-                            // boxShadow: [
-                            //   BoxShadow(
-                            //     color: AppColors.neonGold.withOpacity(0.1),
-                            //     blurRadius: 8,
-                            //     spreadRadius: 1,
-                            //   ),
-                            // ],
-                          ),
-                          child: Icon(
-                            Iconsax.arrow_left_2,
-                            color: AppColors.neonGold,
-                            size: 22,
-                          ),
-                        ),
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.neonGold.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Iconsax.arrow_left_2,
+                                  color: AppColors.neonGold,
+                                  size: 24,
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 20),
         
@@ -129,7 +126,7 @@ class _HeightPageState extends State<HeightPage> {
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
-                            fontStyle: FontStyle.italic,
+                            // fontStyle: FontStyle.italic,
                             height: 1.1,
                             letterSpacing: -0.5,
                           ),
@@ -604,17 +601,20 @@ class _HeightPageState extends State<HeightPage> {
   }
 
   void _continue() async {
-    setState(() => _isLoading = true);
-    
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    setState(() => _isLoading = false);
-    
+   
+
+
+  final UserRegistrationModel data = widget.userdata.copyWith(
+    height:_selectedHeight,
+  );
+
+
+
     // Navigate to next page (Lifestyle or Bio)
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => LifestylePage(),
+        pageBuilder: (context, animation, secondaryAnimation) => LifestylePage( userdata: data,),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

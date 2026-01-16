@@ -1,16 +1,23 @@
 import 'package:dating/main.dart';
+import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/registration%20pages/gender_page.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
 class DateOfBirthPage extends StatefulWidget {
+  const DateOfBirthPage({
+    super.key,
+    required this.userdata,
+  });
+
+  final UserRegistrationModel userdata;
+
   @override
   _DateOfBirthPageState createState() => _DateOfBirthPageState();
 }
 
 class _DateOfBirthPageState extends State<DateOfBirthPage> {
   DateTime? _selectedDate;
-  bool _isLoading = false;
   int _age = 0;
 
   @override
@@ -74,7 +81,7 @@ class _DateOfBirthPageState extends State<DateOfBirthPage> {
                             style: TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.w900,
-                              fontStyle: FontStyle.italic,
+                              // fontStyle: FontStyle.italic,
                               height: 1.1,
                               letterSpacing: -0.5,
                             ),
@@ -215,16 +222,7 @@ class _DateOfBirthPageState extends State<DateOfBirthPage> {
                       ),
                       elevation: 0,
                     ),
-                    child: _isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Row(mainAxisAlignment: MainAxisAlignment.center,
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                                   'Continue',
@@ -444,11 +442,14 @@ Future<void> _pickDate() async {
   void _continue() {
     if (_selectedDate == null || _age < 18) return;
     
+    final UserRegistrationModel data =widget.  userdata.copyWith( dateOfBirth:_selectedDate.toString() );
+                                          
+
     // Navigate to Gender page
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GenderPage(),
+        builder: (context) => GenderPage( userdata: data,),
       ),
     );
   }
