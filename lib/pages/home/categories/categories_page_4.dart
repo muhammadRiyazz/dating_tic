@@ -46,7 +46,7 @@ class CallGirlCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
-                colors: [Colors.purple.withOpacity(0.2), Colors.black],
+                colors: [Colors.purple.withOpacity(0.1), Colors.black],
                 stops: const [0.0, 0.9],
               ),
             ),

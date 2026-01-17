@@ -41,7 +41,9 @@ void main() {
 // ----------------------------------------
 
 class AppColors {
-  static const Color deepBlack = Color(0xFF0A0A0A);
+    static const Color deepBlack = Color(0xFF000000);
+  static const Color accentGold = Color(0xFFD4AF37);
+  static const Color mutedGold = Color(0xFF8B7322);
   static const Color cardBlack = Color(0xFF1A1A1A);
   static const Color neonGold = Color(0xFFFFD700);
   static const Color richOrange = Color(0xFFFF8C00);

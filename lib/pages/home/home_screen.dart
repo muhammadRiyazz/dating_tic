@@ -1,16 +1,15 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:dating/main.dart';
-import 'package:dating/models/profile_model.dart';
-import 'package:dating/pages/registration%20pages/splash_screen.dart';
-import 'package:dating/services/auth_service.dart';
-import 'package:dating/services/registration_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 
-// Import your providers
+// Your existing imports
+import 'package:dating/main.dart';
+import 'package:dating/models/profile_model.dart';
+import 'package:dating/services/auth_service.dart';
 import 'package:dating/providers/profile_provider.dart';
 
 // Your category page imports
@@ -28,22 +27,43 @@ class WeekendHome extends StatefulWidget {
 }
 
 class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin {
-  late AnimationController _bgAnimationController;
+  late ScrollController _scrollController;
+  TabController? _tabController; 
   int _navIndex = 0;
+  bool _isNavVisible = true;
+  
+  // Adjusted height for the category tag (Slim & Standard)
+  final double _categoryHeaderHeight = 35.0; 
 
   @override
   void initState() {
     super.initState();
-    _bgAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
+      if (_isNavVisible) setState(() => _isNavVisible = false);
+    } else if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
+      if (!_isNavVisible) setState(() => _isNavVisible = true);
+    }
   }
 
   @override
   void dispose() {
-    _bgAnimationController.dispose();
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    _tabController?.dispose();
     super.dispose();
+  }
+
+  void _setupTabController(int length) {
+    if (_tabController == null || _tabController!.length != length) {
+      _tabController?.dispose();
+      _tabController = TabController(length: length, vsync: this);
+      _tabController!.addListener(() => setState(() {}));
+    }
   }
 
   Widget _buildCategoryContent(int index, List<Profile> profiles) {
@@ -62,38 +82,51 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     final homeProvider = context.watch<HomeProvider>();
     final bool hasData = homeProvider.categories.isNotEmpty;
 
+    if (hasData) {
+      _setupTabController(homeProvider.categories.length);
+    }
+
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
-      body: Stack(
-        children: [
-          _buildTopGlow(),
-          _buildAnimatedBackground(),
-          
-          SafeArea(
-            child: homeProvider.isLoading 
-                ? _buildEliteShimmer() 
-                : DefaultTabController(
-                    // Ensure length is at least 1 to avoid TabController error
-                    length: hasData ? homeProvider.categories.length : 1,
-                    child: NestedScrollView(
+      extendBody: true,
+      body: Container(    decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.neonGold.withOpacity(0.1),
+              Colors.transparent,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Stack(
+          children: [
+            
+            SafeArea(
+              bottom: false,
+              child: homeProvider.isLoading 
+                  ? _buildEliteShimmer() 
+                  : NestedScrollView(
+                      controller: _scrollController,
                       headerSliverBuilder: (context, innerBoxIsScrolled) {
                         return [
                           SliverToBoxAdapter(child: _buildBrandedHeader()),
                           SliverToBoxAdapter(child: _buildSearchBar()),
-                          // SliverToBoxAdapter(child: _buildBannerSlider()),
+                          SliverToBoxAdapter(child: _buildBannerSlider()),
                           
-                          // Only show TabBar if there is data
-                          if (hasData)
+                          if (hasData && _tabController != null)
                             SliverPersistentHeader(
                               pinned: true,
-                              delegate: _StickyTabBarDelegate(
-                                child: _buildCustomTabBar(homeProvider),
+                              delegate: _StickyCategoryDelegate(
+                                height: _categoryHeaderHeight,
+                                child: _buildSlimCategoryHeader(homeProvider),
                               ),
                             ),
                         ];
                       },
-                      body: hasData 
+                      body: (hasData && _tabController != null)
                           ? TabBarView(
+                              controller: _tabController,
                               physics: const BouncingScrollPhysics(),
                               children: homeProvider.categories.asMap().entries.map((entry) {
                                 return _buildCategoryContent(entry.key, entry.value.profiles);
@@ -101,182 +134,40 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
                             )
                           : _buildEnhancedEmptyState(homeProvider),
                     ),
-                  ),
-          ),
-
-          // Bottom Navigation
-          Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomNavBar()),
-        ],
-      ),
-    );
-  }
-
-  // ===================== UI COMPONENTS =====================
-
-  Widget _buildTopGlow() {
-    return Positioned(
-      top: 0, left: 0, right: 0,
-      child: Container(
-        height: 250,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.neonGold.withOpacity(0.12),
-              AppColors.deepBlack.withOpacity(0),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEnhancedEmptyState(HomeProvider provider) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
-        child: Column(
-          children: [
-            // Glassmorphism Card
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
-              ),
-              child: Column(
-                children: [
-                  // Animated Outer Glow for Icon
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 100, height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.neonGold.withOpacity(0.1),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.neonGold.withOpacity(0.1),
-                              blurRadius: 40,
-                              spreadRadius: 10,
-                            )
-                          ],
-                        ),
-                      ),
-                      const Icon(Iconsax.radar5, size: 60, color: AppColors.neonGold),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  const Text(
-                    "Expanding the Circle",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "We're currently scouting for more elite profiles that match your vibe. Try adjusting your filters or check back shortly.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  // Premium Outline Button
-                  GestureDetector(
-                    onTap: ()async => await fetchprofiles(context), // Trigger refresh
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: AppColors.neonGold.withOpacity(0.5)),
-                        color: AppColors.neonGold.withOpacity(0.05),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Iconsax.refresh, size: 18, color: AppColors.neonGold),
-                          SizedBox(width: 8),
-                          Text(
-                            "REFRESH DISCOVERY",
-                            style: TextStyle(
-                              color: AppColors.neonGold,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
-            const SizedBox(height: 40),
-            // Subtext message
-            Text(
-              "THE SPOTLIGHT IS WAITING FOR YOU",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.2),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
+        
+            _buildAnimatedBottomNav(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCustomTabBar(HomeProvider provider) {
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          color: AppColors.deepBlack.withOpacity(0.7),
-          child: Column(
-            children: [
-              TabBar(
-                isScrollable: true,
-                indicatorColor: AppColors.neonGold,
-                indicatorWeight: 1,
-                indicatorSize: TabBarIndicatorSize.label,
-                dividerColor: Colors.transparent,
-                labelColor: AppColors.neonGold,
-                unselectedLabelColor: Colors.grey.shade600,
-                tabAlignment: TabAlignment.start,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                tabs: provider.categories.map((cat) => Tab(
-                  child: Row(
-                    children: [
-                      Text(cat.goalEmoji),
-                      const SizedBox(width: 8),
-                      Text(cat.goalTitle.toUpperCase()),
-                    ],
-                  ),
-                )).toList(),
-              ),
-              // Container(height: 1, color: Colors.white.withOpacity(0.05)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // ===================== UPDATED UI COMPONENTS =====================
+
+  // Widget _buildEliteTopGlow() {
+  //   return Positioned(
+  //     top: 0, left: 0, right: 0,
+  //     child: Container(
+  //       height: 330,
+  //       decoration: BoxDecoration(
+  //         gradient: LinearGradient(
+  //           // center: const Alignment(0, -0.10),
+  //           // radius: 1.2,
+  //           colors: [
+  //             AppColors.neonGold.withOpacity(0.15),
+  //             AppColors.neonGold.withOpacity(0.05),
+  //             Colors.transparent,
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildBrandedHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 10),
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -285,13 +176,13 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
             children: [
               ShaderMask(
                 shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Colors.white, AppColors.neonGold],
+                  colors: [Colors.white, AppColors.neonGold, Color(0xFFFFD700)],
                 ).createShader(bounds),
                 child: const Text("WEEKEND", 
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 3)),
               ),
-              const Text("ELITE DATING EXPERIENCE", 
-                style: TextStyle(color: Colors.white54, fontSize: 8, fontWeight: FontWeight.bold)),
+              Text("ELITE DATING EXPERIENCE", 
+                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
             ],
           ),
           _buildBoostButton(),
@@ -302,21 +193,22 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
 
   Widget _buildBoostButton() {
     return GestureDetector(
-      onDoubleTap: ()async {
-       await AuthService(). logout();
-      },
+      onLongPress: () async => await AuthService().logout(),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [AppColors.neonGold, AppColors.richOrange]),
-          borderRadius: BorderRadius.circular(25),
-          // boxShadow: [BoxShadow(color: AppColors.neonGold.withOpacity(0.2), blurRadius: 10)],
+          gradient: const LinearGradient(
+            colors: [AppColors.neonGold, Color(0xFFFFB300), AppColors.richOrange],
+            begin: Alignment.topLeft, end: Alignment.bottomRight
+          ),
+          borderRadius: BorderRadius.circular(30),
+          // boxShadow: [BoxShadow(color: AppColors.neonGold.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: const Row(
           children: [
             Icon(Iconsax.flash_15, color: Colors.black, size: 14),
-            SizedBox(width: 4),
-            Text("BOOST", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 11)),
+            SizedBox(width: 6),
+            Text("BOOST", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 10)),
           ],
         ),
       ),
@@ -325,21 +217,21 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
-          color: AppColors.cardBlack,
-          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: Row(
           children: [
-            const Icon(Iconsax.search_normal_1, color: AppColors.neonGold, size: 18),
-            const SizedBox(width: 12),
+            const Icon(Iconsax.search_normal_1, color: AppColors.neonGold, size: 20),
+            const SizedBox(width: 15),
             Text("Search your vibe...", style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
             const Spacer(),
-            Icon(Iconsax.setting_4, color: Colors.grey.shade600, size: 18),
+            Icon(Iconsax.setting_4, color: Colors.grey.shade600, size: 20),
           ],
         ),
       ),
@@ -349,12 +241,13 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
   Widget _buildBannerSlider() {
     return Container(
       height: 130,
-      margin: const EdgeInsets.symmetric(vertical: 10),
+      margin: const EdgeInsets.only(bottom: 5,top: 5),
       child: PageView(
-        controller: PageController(viewportFraction: 0.88),
-        children: [
-          _buildPremiumCard("Weekend Gold", "Unlimited likes & more", AppColors.neonGold, Iconsax.crown_15),
-          _buildPremiumCard("Safety First", "Verify your profile now", AppColors.valentineRed, Iconsax.shield_tick),
+        controller: PageController(viewportFraction: .89),
+        children: [          _buildPremiumCard("Safety First", "Verify your elite status", AppColors.valentineRed, Iconsax.shield_tick),
+
+          _buildPremiumCard("Weekend Gold", "Unlimited likes & spotlight", AppColors.neonGold, Iconsax.crown_15),
+          _buildPremiumCard("Safety First", "Verify your elite status", AppColors.valentineRed, Iconsax.shield_tick),
         ],
       ),
     );
@@ -362,31 +255,31 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
 
   Widget _buildPremiumCard(String title, String sub, Color color, IconData icon) {
     return Container(
-      margin: const EdgeInsets.only(right: 12, bottom: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.6), color.withOpacity(0.1)],
+          colors: [color.withOpacity(0.5), color.withOpacity(0.08)],
           begin: Alignment.topLeft, end: Alignment.bottomRight
         ),
         // border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Stack(
         children: [
-          Positioned(right: -20, bottom: -20, child: Icon(icon, size: 120, color: Colors.white.withOpacity(0.03))),
+          Positioned(right: -10, bottom: -10, child: Icon(icon, size: 110, color: Colors.white.withOpacity(0.03))),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(22),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(sub, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                const SizedBox(height: 15),
+                Text(sub, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                  child: Text("GET STARTED", style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25)),
+                  child: Text("GET STARTED", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 9)),
                 )
               ],
             ),
@@ -396,131 +289,117 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildAnimatedBackground() {
-    return AnimatedBuilder(
-      animation: _bgAnimationController,
-      builder: (context, child) {
-        return Stack(
-          children: [
-            _buildFloatingBubble(80, 200, 150, AppColors.valentineRed.withOpacity(0.05), 0),
-            _buildFloatingBubble(200, 450, 220, AppColors.neonGold.withOpacity(0.05), 3),
-            _buildFloatingEmoji("✨", 0.5, 300, 100),
-            _buildFloatingEmoji("❤️", 0.8, 50, 400),
-          ],
-        );
-      },
-    );
-  }
+  Widget _buildSlimCategoryHeader(HomeProvider provider) {
+    final int idx = _tabController?.index ?? 0;
+    final category = provider.categories[idx < provider.categories.length ? idx : 0];
 
-  Widget _buildFloatingBubble(double x, double y, double size, Color color, double offset) {
-    double move = math.sin((_bgAnimationController.value * 2 * math.pi) + offset) * 40;
-    return Positioned(
-      left: x + move, top: y + move,
-      child: Container(
-        width: size, height: size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-        child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50), child: Container()),
-      ),
-    );
-  }
-
-  Widget _buildFloatingEmoji(String emoji, double tOffset, double x, double y) {
-    double move = math.cos((_bgAnimationController.value * 2 * math.pi) + tOffset) * 25;
-    return Positioned(
-      left: x + move, top: y - move, 
-      child: Opacity(opacity: 0.15, child: Text(emoji, style: const TextStyle(fontSize: 30)))
-    );
-  }
-
-  Widget _buildEliteShimmer() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
+    return Container(
+      // height: _categoryHeaderHeight,
+      color: AppColors.deepBlack.withOpacity(0.9),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 20),
-          _shimmerBox(width: 150, height: 25),
-          const SizedBox(height: 20),
-          _shimmerBox(width: double.infinity, height: 50, radius: 15),
-          const SizedBox(height: 20),
-          _shimmerBox(width: double.infinity, height: 140, radius: 24),
-          const SizedBox(height: 30),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15, childAspectRatio: 0.7
-              ),
-              itemCount: 4,
-              itemBuilder: (_, __) => _shimmerBox(width: 0, height: 0, radius: 20),
+          const SizedBox(width: 40),
+          Expanded(child: Divider(color: Colors.white.withOpacity(0.3), thickness: 0.8)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              "${category.goalTitle.toUpperCase()}",
+              style:  TextStyle(color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 1),
             ),
-          )
+          ),
+          Expanded(child: Divider(color: Colors.white.withOpacity(0.3), thickness: 0.8)),
+          const SizedBox(width: 40),
         ],
       ),
     );
   }
 
-  Widget _shimmerBox({double? width, double? height, double radius = 8, EdgeInsets? margin}) {
-    return Container(
-      width: width, height: height, margin: margin,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          height: 75,
-          padding: const EdgeInsets.only(bottom: 10),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.8),
-            border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(Iconsax.home_15, 0),
-              _navItem(Iconsax.discover, 1),
-              _navItem(Iconsax.heart5, 2, isMain: true),
-              _navItem(Iconsax.message_notif, 3),
-              _navItem(Iconsax.user, 4),
-            ],
-          ),
+  Widget _buildAnimatedBottomNav() {
+    return AnimatedSlide(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+      offset: _isNavVisible ? Offset.zero : const Offset(0, 2),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: _buildFloatingNavBar(),
         ),
       ),
     );
   }
 
-  Widget _navItem(IconData icon, int index, {bool isMain = false}) {
+  Widget _buildFloatingNavBar() {
+    return Container(
+      height: 65,
+      decoration: BoxDecoration(
+        color: const Color(0xFF121212).withOpacity(0.95),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(30) ,topRight:  Radius.circular(30)),
+        // border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 25, offset: const Offset(0, 10))],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _navItem(Iconsax.home_1, 0),
+          _navItem(Iconsax.discover, 1),
+                    _navItem(Iconsax.heart, 2),
+
+          // _buildMainHeartItem(2),
+          _navItem(Iconsax.message_notif, 3),
+          _navItem(Iconsax.user, 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItem(IconData icon, int index) {
     bool isSelected = _navIndex == index;
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        setState(() => _navIndex = index);
-      },
+      onTap: () => setState(() => _navIndex = index),
+      child: Icon(icon, color: isSelected ? AppColors.neonGold : Colors.white24, size: 24),
+    );
+  }
+
+  Widget _buildMainHeartItem(int index) {
+    return GestureDetector(
+      onTap: () => setState(() => _navIndex = index),
       child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.neonGold.withOpacity(0.1) : Colors.transparent,
+        padding: const EdgeInsets.all(13),
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
+          gradient: LinearGradient(colors: [AppColors.valentineRed, Color(0xFFFF4D4D)]),
+          boxShadow: [BoxShadow(color: AppColors.valentineRed, blurRadius: 12, spreadRadius: -2)],
         ),
-        child: Icon(icon, 
-          color: isSelected ? AppColors.neonGold : (isMain ? AppColors.valentineRed : Colors.white38), 
-          size: isMain ? 28 : 24),
+        child: const Icon(Iconsax.heart5, color: Colors.white, size: 28),
       ),
     );
+  }
+
+  Widget _buildEnhancedEmptyState(HomeProvider provider) {
+    return const Center(child: CircularProgressIndicator(color: AppColors.neonGold));
+  }
+
+  Widget _buildEliteShimmer() {
+    return const Center(child: CircularProgressIndicator(color: AppColors.neonGold));
   }
 }
 
-class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+// ===================== DELEGATE FIX =====================
+
+class _StickyCategoryDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
-  _StickyTabBarDelegate({required this.child});
-  @override double get minExtent => 48;
-  @override double get maxExtent => 48;
-  @override Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => child;
-  @override bool shouldRebuild(_StickyTabBarDelegate oldDelegate) => false;
+  final double height;
+  _StickyCategoryDelegate({required this.child, required this.height});
+
+  @override double get minExtent => height;
+  @override double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override bool shouldRebuild(_StickyCategoryDelegate oldDelegate) => true;
 }
