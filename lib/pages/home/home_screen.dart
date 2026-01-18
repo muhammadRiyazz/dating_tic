@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:dating/pages/maches/match_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart'; // Add this
 
 // Your existing imports
 import 'package:dating/main.dart';
@@ -32,7 +34,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
   int _navIndex = 0;
   bool _isNavVisible = true;
   
-  // Adjusted height for the category tag (Slim & Standard)
   final double _categoryHeaderHeight = 35.0; 
 
   @override
@@ -77,65 +78,80 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     }
   }
 
+  Widget _getCurrentPage() {
+    switch (_navIndex) {
+      case 0: // Home Page
+        final homeProvider = context.watch<HomeProvider>();
+        final bool hasData = homeProvider.categories.isNotEmpty;
+
+        if (hasData) {
+          _setupTabController(homeProvider.categories.length);
+        }
+
+        // Return Shimmer if loading
+        if (homeProvider.isLoading) return _buildEliteShimmer();
+
+        return NestedScrollView(
+          controller: _scrollController,
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(child: _buildBrandedHeader()),
+              SliverToBoxAdapter(child: _buildSearchBar()),
+              if (hasData && _tabController != null)
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _StickyCategoryDelegate(
+                    height: _categoryHeaderHeight,
+                    child: _buildSlimCategoryHeader(homeProvider),
+                  ),
+                ),
+            ];
+          },
+          body: (hasData && _tabController != null)
+              ? TabBarView(
+                  controller: _tabController,
+                  physics: const BouncingScrollPhysics(),
+                  children: homeProvider.categories.asMap().entries.map((entry) {
+                    return _buildCategoryContent(entry.key, entry.value.profiles);
+                  }).toList(),
+                )
+              : _buildEnhancedEmptyState(homeProvider),
+        );
+      
+      case 1: return Container();
+      case 2: return MatchesPage();
+      case 3: return Container();
+      case 4: return Container();
+      default: return Container();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final homeProvider = context.watch<HomeProvider>();
-    final bool hasData = homeProvider.categories.isNotEmpty;
-
-    if (hasData) {
-      _setupTabController(homeProvider.categories.length);
-    }
-
     return Scaffold(
-      backgroundColor: AppColors.deepBlack,
+      backgroundColor: const Color(0xFF0A0A0A), // Deep black background
       extendBody: true,
-      body: Container(    decoration: BoxDecoration(
-          gradient: LinearGradient(
+
+      body: Container(
+        child: Stack(
+          children: [
+            Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: MediaQuery.of(context).size.height * 0.45,
+      child: Container(
+        decoration: BoxDecoration(
+       gradient: LinearGradient(
             colors: [
-              AppColors.neonGold.withOpacity(0.1),
-              Colors.transparent,
-            ],
+              const Color(0xFFFF4D67).withOpacity(0.25), Colors.transparent],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Stack(
-          children: [
-            
-            SafeArea(
-              bottom: false,
-              child: homeProvider.isLoading 
-                  ? _buildEliteShimmer() 
-                  : NestedScrollView(
-                      controller: _scrollController,
-                      headerSliverBuilder: (context, innerBoxIsScrolled) {
-                        return [
-                          SliverToBoxAdapter(child: _buildBrandedHeader()),
-                          SliverToBoxAdapter(child: _buildSearchBar()),
-                          SliverToBoxAdapter(child: _buildBannerSlider()),
-                          
-                          if (hasData && _tabController != null)
-                            SliverPersistentHeader(
-                              pinned: true,
-                              delegate: _StickyCategoryDelegate(
-                                height: _categoryHeaderHeight,
-                                child: _buildSlimCategoryHeader(homeProvider),
-                              ),
-                            ),
-                        ];
-                      },
-                      body: (hasData && _tabController != null)
-                          ? TabBarView(
-                              controller: _tabController,
-                              physics: const BouncingScrollPhysics(),
-                              children: homeProvider.categories.asMap().entries.map((entry) {
-                                return _buildCategoryContent(entry.key, entry.value.profiles);
-                              }).toList(),
-                            )
-                          : _buildEnhancedEmptyState(homeProvider),
-                    ),
-            ),
-        
+      ),
+    ),
+            SafeArea(bottom: false, child: _getCurrentPage()),
             _buildAnimatedBottomNav(),
           ],
         ),
@@ -143,49 +159,168 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     );
   }
 
-  // ===================== UPDATED UI COMPONENTS =====================
+  // ===================== GLASSY SHIMMER LOADING =====================
 
-  // Widget _buildEliteTopGlow() {
-  //   return Positioned(
-  //     top: 0, left: 0, right: 0,
-  //     child: Container(
-  //       height: 330,
-  //       decoration: BoxDecoration(
-  //         gradient: LinearGradient(
-  //           // center: const Alignment(0, -0.10),
-  //           // radius: 1.2,
-  //           colors: [
-  //             AppColors.neonGold.withOpacity(0.15),
-  //             AppColors.neonGold.withOpacity(0.05),
-  //             Colors.transparent,
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _buildEliteShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.white.withOpacity(0.05),
+      highlightColor: Colors.white.withOpacity(0.15),
+      period: const Duration(milliseconds: 1500),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              // Header Shimmer
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 25, width: 140, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                      const SizedBox(height: 8),
+                      Container(height: 10, width: 100, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2))),
+                    ],
+                  ),
+                  Container(height: 35, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
+                ],
+              ),
+              const SizedBox(height: 30),
+              // Search Bar Shimmer
+              Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
+              const SizedBox(height: 25),
+              // Banner Shimmer
+              Container(height: 130, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28))),
+              const SizedBox(height: 30),
+              // Category Tab Shimmer
+              Center(child: Container(height: 2, width: 200, color: Colors.white)),
+              const SizedBox(height: 20),
+              // Grid Shimmer (Profile Cards)
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                ),
+                itemCount: 4,
+                itemBuilder: (_, __) => Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ===================== NAVIGATION & UI COMPONENTS =====================
+
+  Widget _buildAnimatedBottomNav() {
+    return AnimatedSlide(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+      offset: _isNavVisible ? Offset.zero : const Offset(0, 2),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: _buildFloatingNavBar(),
+      ),
+    );
+  }
+
+  Widget _buildFloatingNavBar() {
+    return Container(
+      height: 85,
+      decoration: BoxDecoration(
+        color: const Color(0xFF121212).withOpacity(0.9),
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 25, offset: const Offset(0, 10))],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _navItem(Iconsax.home_1, 0, "Home"),
+              _navItem(Iconsax.discover, 1, "Discover"),
+              _navItem(Iconsax.lovely, 2, "Match"),
+              _navItem(Iconsax.message_notif, 3, "Chat"),
+              _navItem(Iconsax.user, 4, "Profile"),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem(IconData icon, int index, String label) {
+    bool isSelected = _navIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _navIndex = index),
+      child: Container(
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isSelected ? AppColors.neonGold : Colors.white54, size: isSelected ? 26 : 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: isSelected ? AppColors.neonGold : Colors.white54, fontSize: 8, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildBrandedHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(15, 15, 15, 10),
+      padding: const EdgeInsets.fromLTRB(18, 15, 15, 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Colors.white, AppColors.neonGold, Color(0xFFFFD700)],
-                ).createShader(bounds),
-                child: const Text("WEEKEND", 
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 3)),
-              ),
-              Text("ELITE DATING EXPERIENCE", 
-                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  Text(
+                  "Weekend",
+                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -1),
+                ),
+                SizedBox(height: 6,),
+              //  Text("WEEKEND", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 3)),
+              // ShaderMask(
+              //   // shaderCallback: (bounds) => const LinearGradient(
+              //   //   colors: [Colors.white, AppColors.neonGold, Color(0xFFFFD700)],
+              //   // ).createShader(bounds),
+              //   child: const Text("WEEKEND", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 3)),
+              // ),
+              Text("ELITE DATING EXPERIENCE", style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
             ],
           ),
+          Spacer(),
           _buildBoostButton(),
+          SizedBox(width: 6,),
+          Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Icon(Iconsax.notification, color: Colors.white, size: 16),
+    ),
         ],
       ),
     );
@@ -202,7 +337,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
             begin: Alignment.topLeft, end: Alignment.bottomRight
           ),
           borderRadius: BorderRadius.circular(30),
-          // boxShadow: [BoxShadow(color: AppColors.neonGold.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: const Row(
           children: [
@@ -221,7 +355,7 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
+          // color: const Color(0xFF1E1E1E),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
@@ -238,64 +372,12 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildBannerSlider() {
-    return Container(
-      height: 130,
-      margin: const EdgeInsets.only(bottom: 5,top: 5),
-      child: PageView(
-        controller: PageController(viewportFraction: .89),
-        children: [          _buildPremiumCard("Safety First", "Verify your elite status", AppColors.valentineRed, Iconsax.shield_tick),
-
-          _buildPremiumCard("Weekend Gold", "Unlimited likes & spotlight", AppColors.neonGold, Iconsax.crown_15),
-          _buildPremiumCard("Safety First", "Verify your elite status", AppColors.valentineRed, Iconsax.shield_tick),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPremiumCard(String title, String sub, Color color, IconData icon) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.5), color.withOpacity(0.08)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight
-        ),
-        // border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Stack(
-        children: [
-          Positioned(right: -10, bottom: -10, child: Icon(icon, size: 110, color: Colors.white.withOpacity(0.03))),
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(sub, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25)),
-                  child: Text("GET STARTED", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 9)),
-                )
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSlimCategoryHeader(HomeProvider provider) {
     final int idx = _tabController?.index ?? 0;
     final category = provider.categories[idx < provider.categories.length ? idx : 0];
 
     return Container(
-      // height: _categoryHeaderHeight,
-      color: AppColors.deepBlack.withOpacity(0.9),
+      // color: AppColors.deepBlack.withOpacity(0.8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -304,8 +386,8 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              "${category.goalTitle.toUpperCase()}",
-              style:  TextStyle(color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 1),
+              category.goalTitle.toUpperCase(),
+              style: TextStyle(color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 1),
             ),
           ),
           Expanded(child: Divider(color: Colors.white.withOpacity(0.3), thickness: 0.8)),
@@ -315,78 +397,14 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildAnimatedBottomNav() {
-    return AnimatedSlide(
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOutCubic,
-      offset: _isNavVisible ? Offset.zero : const Offset(0, 2),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.all(0),
-          child: _buildFloatingNavBar(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFloatingNavBar() {
-    return Container(
-      height: 65,
-      decoration: BoxDecoration(
-        color: const Color(0xFF121212).withOpacity(0.95),
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(30) ,topRight:  Radius.circular(30)),
-        // border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 25, offset: const Offset(0, 10))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _navItem(Iconsax.home_1, 0),
-          _navItem(Iconsax.discover, 1),
-                    _navItem(Iconsax.heart, 2),
-
-          // _buildMainHeartItem(2),
-          _navItem(Iconsax.message_notif, 3),
-          _navItem(Iconsax.user, 4),
-        ],
-      ),
-    );
-  }
-
-  Widget _navItem(IconData icon, int index) {
-    bool isSelected = _navIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _navIndex = index),
-      child: Icon(icon, color: isSelected ? AppColors.neonGold : Colors.white24, size: 24),
-    );
-  }
-
-  Widget _buildMainHeartItem(int index) {
-    return GestureDetector(
-      onTap: () => setState(() => _navIndex = index),
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(colors: [AppColors.valentineRed, Color(0xFFFF4D4D)]),
-          boxShadow: [BoxShadow(color: AppColors.valentineRed, blurRadius: 12, spreadRadius: -2)],
-        ),
-        child: const Icon(Iconsax.heart5, color: Colors.white, size: 28),
-      ),
-    );
-  }
-
   Widget _buildEnhancedEmptyState(HomeProvider provider) {
-    return const Center(child: CircularProgressIndicator(color: AppColors.neonGold));
-  }
-
-  Widget _buildEliteShimmer() {
-    return const Center(child: CircularProgressIndicator(color: AppColors.neonGold));
+    return Center(
+      child: Text("No profiles found", style: TextStyle(color: Colors.white.withOpacity(0.5))),
+    );
   }
 }
 
-// ===================== DELEGATE FIX =====================
+// ===================== STICKY DELEGATE =====================
 
 class _StickyCategoryDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
