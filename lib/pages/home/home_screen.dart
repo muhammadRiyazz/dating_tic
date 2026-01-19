@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:dating/pages/maches/match_page.dart';
+import 'package:dating/pages/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -118,10 +119,10 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
               : _buildEnhancedEmptyState(homeProvider),
         );
       
-      case 1: return Container();
-      case 2: return MatchesPage();
+      case 1: return MatchesPage();
+      case 2: return Container();
       case 3: return Container();
-      case 4: return Container();
+      case 4: return ProfilePage();
       default: return Container();
     }
   }
@@ -255,9 +256,10 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(Iconsax.home_1, 0, "Home"),
-              _navItem(Iconsax.discover, 1, "Discover"),
-              _navItem(Iconsax.lovely, 2, "Match"),
-              _navItem(Iconsax.message_notif, 3, "Chat"),
+                            _navItem(Iconsax.lovely, 1, "Match"),
+              _navItem(Iconsax.message_notif, 2, "Chat"),
+
+              _navItem(Iconsax.call, 3, "Call"),
               _navItem(Iconsax.user, 4, "Profile"),
             ],
           ),
@@ -296,9 +298,9 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
             children: [
                   Text(
                   "Weekend",
-                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -1),
+                  style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
                 ),
-                SizedBox(height: 6,),
+                SizedBox(height: 4,),
               //  Text("WEEKEND", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 3)),
               // ShaderMask(
               //   // shaderCallback: (bounds) => const LinearGradient(

@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:dating/main.dart'; // Ensure AppColors are defined here
 import 'package:dating/models/profile_model.dart';
+import 'package:dating/pages/home/widgets/icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -160,7 +162,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> with TickerProv
 
   Widget _buildModernHeader() {
     return SliverAppBar(
-      expandedHeight: MediaQuery.of(context).size.height * 0.50,
+      expandedHeight: MediaQuery.of(context).size.height * 0.42,
       automaticallyImplyLeading: false,
       pinned: true,
       stretch: true,
@@ -182,19 +184,55 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> with TickerProv
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.center,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.9),
                     Colors.transparent,
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.8),
+                    // Colors.transparent,
+                    // Colors.black.withOpacity(0.8),
                   ],
-                  stops: const [0, 0.4, 0.7, 1],
+                  // stops: const [0, 0.4, 0.7, 1],
                 ),
               ),
             ),
-           
+           Positioned(
+            bottom: 15,right: 15,
+            
+            child: Row(children: [
+     circularActionBtn(Iconsax.close_circle, Colors.white, Colors.white10),
+     SizedBox(width: 10,),
+                        circularActionBtn(Iconsax.message_text5, Colors.white, Colors.white10),     SizedBox(width: 10,),
+
+                        circularActionBtn(Iconsax.video5, Colors.white, Colors.white10),
+                             SizedBox(width: 10,),
+
+                           GestureDetector(
+                          onTap: () {
+                            // _triggerHeartExplosion();
+                            HapticFeedback.heavyImpact();
+                          },
+                          child: Container(
+                            height: 45,
+                            width: 45,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppColors.neonGold, Color(0xFFFFB74D)],
+                              ),
+                              shape: BoxShape.circle,
+                              // boxShadow: [
+                              //   BoxShadow(
+                              //     color: AppColors.neonGold.withOpacity(0.4),
+                              //     blurRadius: 15,
+                              //     offset: const Offset(0, 5),
+                              //   ),
+                              // ],
+                            ),
+                            child: const Icon(Iconsax.heart5, color: Colors.black, size: 22),
+                          ),
+                        ),
+
+           ],))
           ],
         ),
       ),

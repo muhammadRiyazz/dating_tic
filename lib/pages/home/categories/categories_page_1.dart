@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating/models/profile_model.dart';
+import 'package:dating/pages/home/widgets/icons.dart';
 import 'package:dating/pages/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dating/main.dart';
@@ -243,9 +244,9 @@ class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _circularActionBtn(Iconsax.close_circle, Colors.white, Colors.white10),
-                        _circularActionBtn(Iconsax.message_text5, Colors.white, Colors.white10),
-                        _circularActionBtn(Iconsax.video5, Colors.white, Colors.white10),
+                        circularActionBtnhome(Iconsax.close_circle, Colors.white, Colors.white10),
+                        circularActionBtnhome(Iconsax.message_text5, Colors.white, Colors.white10),
+                        circularActionBtnhome(Iconsax.video5, Colors.white, Colors.white10),
                         
                         // Heart Button
                         GestureDetector(
@@ -304,16 +305,5 @@ class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> {
   }
 
   // Helper widget for circular buttons
-  Widget _circularActionBtn(IconData icon, Color iconColor, Color bgColor) {
-    return Container(
-      height: 55,
-      width: 55,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Icon(icon, color: iconColor, size: 24),
-    );
-  }
+
 }
