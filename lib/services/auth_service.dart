@@ -1,4 +1,6 @@
 // lib/services/auth_service.dart
+import 'package:dating/pages/first_page.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
@@ -47,6 +49,8 @@ class AuthService {
     await prefs.remove(_userPhoneKey);
     await prefs.remove(_userNameKey);
     await prefs.remove(_userPhotoKey);
+
+
   }
 
   // Get user data

@@ -1,4 +1,6 @@
 import 'dart:ui';
+import 'package:dating/pages/first_page.dart';
+import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -65,7 +67,21 @@ class _ProfilePageState extends State<ProfilePage> {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _buildGlassTile(Iconsax.info_circle, "Help & Support", "FAQs, Contact us"),
-                      _buildGlassTile(Iconsax.logout, "Logout", "Sign out of your account", isDestructive: true),
+                      GestureDetector(
+                        
+                      onTap: () async {
+  await AuthService().logout();
+
+
+Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => DatingIntroScreen()),
+          (route) => false,
+        );
+},
+
+                        
+                        child: _buildGlassTile(Iconsax.logout, "Logout", "Sign out of your account", isDestructive: true)),
                     ]),
                   ),
                 ),
@@ -285,4 +301,5 @@ color: Color.fromARGB(255, 206, 206, 206)            ),
       child: Icon(icon, color: Colors.white, size: 22),
     );
   }
+
 }

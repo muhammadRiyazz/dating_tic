@@ -1,31 +1,49 @@
 import 'dart:math';
 import 'dart:ui';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating/models/profile_model.dart';
 import 'package:dating/pages/home/widgets/icons.dart';
 import 'package:dating/pages/user_profile_page.dart';
+import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dating/main.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
+import 'package:dating/providers/profile_provider.dart';
+import 'package:dating/providers/interaction_provider.dart';
 
 class CategoriesPage1 extends StatelessWidget {
-    final List<Profile> profiles; // Add this line
+  final List<Profile> profiles;
 
-  const CategoriesPage1({super.key ,required this.profiles});
+  const CategoriesPage1({super.key, required this.profiles});
 
   @override
   Widget build(BuildContext context) {
+    if (profiles.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Iconsax.radar, color: Colors.white.withOpacity(0.2), size: 80),
+            const SizedBox(height: 16),
+            Text("Searching for more vibes...", 
+              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16)),
+          ],
+        ),
+      );
+    }
     return ListView.builder(
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 110, top: 10, left: 12, right: 12),
       itemCount: profiles.length,
-      itemBuilder: (ctx, i) => ImmersiveProfileCard(profile: profiles[i]),
+      itemBuilder: (ctx, i) => ImmersiveProfileCard(
+        key: ValueKey(profiles[i].userId), // Essential for animations
+        profile: profiles[i],
+      ),
     );
   }
 }
-
-
 
 class ImmersiveProfileCard extends StatefulWidget {
   final Profile profile;
@@ -35,257 +53,261 @@ class ImmersiveProfileCard extends StatefulWidget {
   State<ImmersiveProfileCard> createState() => _ImmersiveProfileCardState();
 }
 
-class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> {
-  final List<Widget> _particles = [];
+class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> with TickerProviderStateMixin {
+  late AnimationController _slideController;
+  late Animation<Offset> _slideAnimation;
+  
+  late AnimationController _overlayController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
 
-  // Helper function to calculate age
+  String? _interactionStatus; // 'like' or 'pass'
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Controller for the card sliding out
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack)
+    );
+
+    // Controller for the central icon pop
+    _overlayController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.5).animate(
+      CurvedAnimation(parent: _overlayController, curve: Curves.elasticOut)
+    );
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _overlayController, curve: Curves.easeIn)
+    );
+  }
+
+  @override
+  void dispose() {
+    _slideController.dispose();
+    _overlayController.dispose();
+    super.dispose();
+  }
+
+  void _onInteraction(String status) async {
+    setState(() => _interactionStatus = status);
+    
+    final interactionProv = Provider.of<InteractionProvider>(context, listen: false);
+    final homeProv = Provider.of<HomeProvider>(context, listen: false);
+    final authService = AuthService();
+    final userId = await authService.getUserId();
+
+    // 1. Play central icon pop animation
+    _overlayController.forward();
+
+    // 2. Set slide direction
+    Offset endOffset = status == 'like' ? const Offset(1.5, 0.2) : const Offset(-1.5, 0.2);
+    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: endOffset).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeInOutCubic)
+    );
+
+    // 3. Haptics
+    if (status == 'like') {
+      HapticFeedback.heavyImpact();
+    } else {
+      HapticFeedback.mediumImpact();
+    }
+
+    // 4. Wait for pop animation, then slide out
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _slideController.forward().then((_) {
+        // 5. Trigger API and remove from local list
+        interactionProv.handleAction(
+          context: context,
+          fromUser: userId.toString(),
+          toUser: widget.profile.userId.toString(),
+          status: status,
+          onComplete: () {
+            homeProv.removeProfileLocally(widget.profile.userId);
+          },
+        );
+      });
+    });
+  }
+
   int _calculateAge(String? dobString) {
     if (dobString == null || dobString.isEmpty) return 0;
     try {
-      // Handles formats like "YYYY-MM-DD"
       DateTime birthDate = DateTime.parse(dobString);
       DateTime today = DateTime.now();
       int age = today.year - birthDate.year;
-      if (today.month < birthDate.month ||
-          (today.month == birthDate.month && today.day < birthDate.day)) {
-        age--;
-      }
+      if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) age--;
       return age;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  void _triggerHeartExplosion() {
-    for (int i = 0; i < 15; i++) {
-      _addParticle();
-    }
-  }
-
-  void _addParticle() {
-    final random = Random();
-    final double angle = -pi / 2 + (random.nextDouble() - 0.5);
-    final double speed = 100 + random.nextDouble() * 200;
-    final key = UniqueKey();
-
-    // Note: Ensure HeartParticle widget exists in your project
-    /* 
-    final widget = HeartParticle(
-      key: key,
-      angle: angle,
-      speed: speed,
-      onComplete: () {
-        if (mounted) setState(() => _particles.removeWhere((element) => element.key == key));
-      },
-    );
-    setState(() => _particles.add(widget));
-    */
+    } catch (e) { return 0; }
   }
 
   @override
   Widget build(BuildContext context) {
     final int age = _calculateAge(widget.profile.dateOfBirth);
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) {
-          return ProfileDetailsPage(profiledata:widget.profile ,);
-        },));
-      },
-      child: Container(
-        height: 500, // Increased height for a more premium look
-        margin: const EdgeInsets.only(bottom: 25, left: 4, right: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // 1. Profile Main Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: CachedNetworkImage(
-                imageUrl: widget.profile.photo,
-                height: double.infinity,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.grey[900]),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
-              ),
-            ),
-      
-            // 2. Sophisticated Gradient Overlay
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.2),
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.4),
-                    Colors.black.withOpacity(0.9),
-                  ],
-                  stops: const [0.0, 0.2, 0.6, 1.0],
+    return SlideTransition(
+      position: _slideAnimation,
+      child: GestureDetector(
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (context) => ProfileDetailsPage(profiledata: widget.profile))),
+        child: Container(
+          height: 520,
+          margin: const EdgeInsets.only(bottom: 25, left: 4, right: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(35),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10))],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 1. Profile Image
+              ClipRRect(
+                borderRadius: BorderRadius.circular(35),
+                child: CachedNetworkImage(
+                  imageUrl: widget.profile.photo,
+                  height: double.infinity, width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(color: Colors.grey[900]),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
-            ),
-      
-            // 3. Location Badge (Top Left)
-            Positioned(
-              top: 20,
-              left: 20,
-              child: _glassContainer(
-                child: Row(
-                  children: [
-                    const Icon(Iconsax.location5, color: AppColors.neonGold, size: 16),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.profile.city ?? "Nearby",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+        
+              // 2. Premium Gradient
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(35),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.black.withOpacity(0.1), Colors.transparent, Colors.black.withOpacity(0.3), Colors.black.withOpacity(0.95)],
+                    stops: const [0.0, 0.3, 0.6, 1.0],
+                  ),
+                ),
+              ),
+
+              // 3. Central Pop Animation (Live Icon)
+              FadeTransition(
+                opacity: _opacityAnimation,
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: _interactionStatus == null 
+                    ? const SizedBox.shrink()
+                    : Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _interactionStatus == 'like' 
+                            ? AppColors.neonGold.withOpacity(0.2) 
+                            : Colors.red.withOpacity(0.2),
+                        ),
+                        child: Icon(
+                          _interactionStatus == 'like' ? Iconsax.heart5 : Iconsax.close_circle5,
+                          color: _interactionStatus == 'like' ? AppColors.neonGold : Colors.red,
+                          size: 100,
+                        ),
                       ),
-                    ),
-                  ],
                 ),
               ),
-            ),
-      
-            // 4. Content Area (Bottom)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Name and Age
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          "${widget.profile.userName}, $age",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+        
+              // 4. Location Badge
+              Positioned(
+                top: 20, left: 20,
+                child: _glassContainer(
+                  child: Row(
+                    children: [
+                      const Icon(Iconsax.location5, color: AppColors.neonGold, size: 14),
+                      const SizedBox(width: 5),
+                      Text(widget.profile.city ?? "Nearby", 
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+        
+              // 5. Bottom Info Content
+              Positioned(
+                bottom: 0, left: 0, right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Text("${widget.profile.userName}, $age",
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: Icon(Icons.verified, color: Colors.blueAccent, size: 22),
-                        ),
-                      ],
-                    ),
-      
-                    // Job / Education
-                    // if (widget.profile.job != null)
-                    //   Padding(
-                    //     padding: const EdgeInsets.only(top: 4),
-                    //     child: Text(
-                    //       "${widget.profile.job} • ${widget.profile.education.name}",
-                    //       style: TextStyle(
-                    //         color: Colors.white.withOpacity(0.8),
-                    //         fontSize: 14,
-                    //       ),
-                    //     ),
-                    //   ),
-      
-                    const SizedBox(height: 5),
-      
-                    // Interests (Dynamic from Model)
-                    if (widget.profile.interests.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: widget.profile.interests.take(3).map((interest) {
-                          return _glassContainer(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            child: Text(
-                              "${interest.emoji} ${interest.name}",
-                              style: const TextStyle(color: Colors.white, fontSize: 11),
-                            ),
-                          );
-                        }).toList(),
+                          const SizedBox(width: 8),
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 4),
+                            child: Icon(Icons.verified, color: Colors.blueAccent, size: 22),
+                          ),
+                        ],
                       ),
-      
-                    // const SizedBox(height: 15),
-      
-                    // // Bio
-                    // if (widget.profile.bio != null)
-                    //   Text(
-                    //     widget.profile.bio!,
-                    //     maxLines: 2,
-                    //     overflow: TextOverflow.ellipsis,
-                    //     style: TextStyle(
-                    //       color: Colors.white.withOpacity(0.7),
-                    //       fontSize: 13,
-                    //       height: 1.4,
-                    //     ),
-                    //   ),
-      
-                    const SizedBox(height: 10),
-      
-                    // Action Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        circularActionBtnhome(Iconsax.close_circle, Colors.white, Colors.white10),
-                        circularActionBtnhome(Iconsax.message_text5, Colors.white, Colors.white10),
-                        circularActionBtnhome(Iconsax.video5, Colors.white, Colors.white10),
-                        
-                        // Heart Button
-                        GestureDetector(
-                          onTap: () {
-                            _triggerHeartExplosion();
-                            HapticFeedback.heavyImpact();
-                          },
-                          child: Container(
-                            height: 60,
-                            width: 60,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [AppColors.neonGold, Color(0xFFFFB74D)],
+                      const SizedBox(height: 10),
+                      if (widget.profile.interests.isNotEmpty)
+                        Wrap(
+                          spacing: 8,
+                          children: widget.profile.interests.take(3).map((interest) {
+                            return _glassContainer(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              child: Text("${interest.emoji} ${interest.name}", 
+                                style: const TextStyle(color: Colors.white, fontSize: 10)),
+                            );
+                          }).toList(),
+                        ),
+                      const SizedBox(height: 20),
+                      
+                      // Action Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // PASS BUTTON
+                          GestureDetector(
+                            onTap: () => _onInteraction('pass'),
+                            child: circularActionBtnhome(Iconsax.close_circle, Colors.white, Colors.white10),
+                          ),
+                          circularActionBtnhome(Iconsax.message_text5, Colors.white, Colors.white10),
+                          circularActionBtnhome(Iconsax.video5, Colors.white, Colors.white10),
+                          
+                          // LIKE BUTTON
+                          GestureDetector(
+                            onTap: () => _onInteraction('like'),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              height: 65, width: 65,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [AppColors.neonGold, Color(0xFFFFB74D)]),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.neonGold.withOpacity(0.4), 
+                                    blurRadius: 15, 
+                                    offset: const Offset(0, 5)
+                                  )
+                                ],
                               ),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.neonGold.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
+                              child: const Icon(Iconsax.heart5, color: Colors.black, size: 32),
                             ),
-                            child: const Icon(Iconsax.heart5, color: Colors.black, size: 30),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Helper widget for Glass buttons/badges
   Widget _glassContainer({required Widget child, EdgeInsets? padding}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -294,16 +316,13 @@ class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> {
         child: Container(
           padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white.withOpacity(0.12),
             borderRadius: BorderRadius.circular(20),
-            // border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: child,
         ),
       ),
     );
   }
-
-  // Helper widget for circular buttons
-
 }

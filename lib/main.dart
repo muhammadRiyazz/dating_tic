@@ -6,6 +6,9 @@ import 'package:dating/pages/first_page.dart';
 import 'package:dating/pages/home/home_screen.dart';
 import 'package:dating/pages/registration%20pages/splash_screen.dart';
 import 'package:dating/pages/registration%20pages/welcom_screens.dart';
+import 'package:dating/providers/interaction_provider.dart';
+import 'package:dating/providers/likers_provider.dart';
+import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
 import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/providers/registration_data_provider.dart' ;
@@ -27,8 +30,12 @@ void main() {
     ChangeNotifierProvider(create: (_) => RegistrationProvider()),
     ChangeNotifierProvider(create: (_) => RegistrationDataProvider()),       
         ChangeNotifierProvider(create: (_) => HomeProvider()),       
+     ChangeNotifierProvider(create: (_) => LikersProvider()), 
+          ChangeNotifierProvider(create: (_) => MatchesProvider()), // Add this
+// Add this
 
- 
+     ChangeNotifierProvider(create: (_) => InteractionProvider()), // Add this
+
         // Add other providers here
       ],
       child: MyApp(),

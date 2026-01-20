@@ -5,7 +5,9 @@ import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/home/home_screen.dart';
 import 'package:dating/pages/registration%20pages/name_page.dart';
+import 'package:dating/pages/registration%20pages/splash_screen.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
+import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/services/auth_service.dart';
 
 import 'package:flutter/material.dart';
@@ -156,6 +158,17 @@ void _verifyOTP() async {
         phone: widget.phoneNumber,
       );
       
+
+    final userId = await authService.getUserId();
+
+    // 2. If we have a userId, trigger the Home API call immediately
+    if (userId != null ) {
+      // ignore: use_build_context_synchronously
+      Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
+    }
+
+
+
       // Navigate to home page for existing users
       Navigator.pushAndRemoveUntil(
         context,

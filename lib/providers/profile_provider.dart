@@ -13,12 +13,18 @@ class HomeProvider with ChangeNotifier {
   List<GoalProfile> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;
-
+// Inside HomeProvider
+void removeProfileLocally(int profileId) {
+  for (var category in _categories) {
+    category.profiles.removeWhere((p) => p.userId == profileId);
+  }
+  notifyListeners(); // This refreshes the UI
+}
   Future<void> fetchHomeData(String userId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
+log('user id ------- $userId');
     try {
       final response = await http.post(
         Uri.parse('https://tictechnologies.in/stage/weekend/profile-grouped-by-goal'),

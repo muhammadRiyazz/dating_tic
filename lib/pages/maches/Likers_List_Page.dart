@@ -623,16 +623,17 @@
 
 
 
-
-
-
-
 import 'dart:ui';
 import 'package:dating/main.dart';
-import 'package:dating/pages/maches/Match_Success_Screen.dart';
+import 'package:dating/models/profile_model.dart';
+import 'package:dating/pages/maches/widgets/likers_shimmer.dart';
+import 'package:dating/pages/maches/widgets/video_style_card.dart';
+import 'package:dating/providers/likers_provider.dart';
+import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
 
 class LikersListPage extends StatefulWidget {
   const LikersListPage({super.key});
@@ -642,7 +643,6 @@ class LikersListPage extends StatefulWidget {
 }
 
 class _LikersListPageState extends State<LikersListPage> {
-  // 0.78 allows left and right side cards to "peek" into view
   final PageController _pageController = PageController(viewportFraction: 0.78);
   double _currentPage = 0;
 
@@ -650,46 +650,16 @@ class _LikersListPageState extends State<LikersListPage> {
   void initState() {
     super.initState();
     _pageController.addListener(() {
-      setState(() {
-        _currentPage = _pageController.page!;
-      });
+      if (mounted) setState(() => _currentPage = _pageController.page!);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final userId = await AuthService().getUserId();
+      if (mounted) {
+        context.read<LikersProvider>().fetchLikers(userId.toString());
+      }
     });
   }
-
-  final List<Map<String, dynamic>> likers = [
-    {
-      "name": "Rodriguez",
-      "age": "22",
-      "img": "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-      "match": "98%",
-      "bio": "Art curator & coffee enthusiast ☕",
-      "verified": true,
-    },
-    {
-      "name": "Marcus Chen",
-      "age": "26",
-      "img": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
-      "match": "92%",
-      "bio": "Mountain guide & adventure seeker 🏔️",
-      "verified": true,
-    },
-    {
-      "name": "Sofia Patel",
-      "age": "24",
-      "img": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1",
-      "match": "85%",
-      "bio": "Professional chef & food blogger 👩‍🍳",
-      "verified": true,
-    },
-    {
-      "name": "Julian Wright",
-      "age": "28",
-      "img": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d",
-      "match": "88%",
-      "bio": "UI/UX Designer & digital nomad 💻",
-      "verified": false,
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -697,66 +667,40 @@ class _LikersListPageState extends State<LikersListPage> {
       backgroundColor: const Color(0xFF0A0A0A),
       body: Stack(
         children: [
-          // 1. TOP GRADIENT (Kept exactly from your code)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: MediaQuery.of(context).size.height * 0.45,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFFFF4D67).withOpacity(0.2), Colors.transparent],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
-
+          _buildBackgroundGradient(),
           SafeArea(
-            child: Column(
-              children: [
-               
-                _buildHeader(context),
-                        
-                const Spacer(),
+            child: Consumer<LikersProvider>(
+              builder: (context, provider, child) {
+                bool hasLikers = !provider.isLoading && provider.likers.isNotEmpty;
 
-                // 2. HORIZONTAL PAGE VIEW (Cards side-by-side)
-                SizedBox(
-                  height: 520, 
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: likers.length,
-                    physics: const BouncingScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      // Logic for smooth scaling of side cards
-                      double relativePosition = index - _currentPage;
-                      double scale = (1 - (relativePosition.abs() * .15)).clamp(0.8, 1.0);
-                      double opacity = (1 - (relativePosition.abs() * 0.4)).clamp(0.5, 1.0);
+                return Column(
+                  children: [
+                    _buildHeader(context),
+                    
+                    // Show PASS hint only if list is NOT empty
+                    if (hasLikers) 
+                      _buildActionHint(Icons.keyboard_arrow_up, "DRAG UP TO PASS", isTop: true),
+                    
+                    const Spacer(),
 
-                      return Transform.scale(
-                        scale: scale,
+                    // if (provider.isLoading)
+                    //   const LikersShimmer()
+                    // else 
+                    if (hasLikers)
+                      _buildLikersCarousel(provider)
+                    else
+                      _buildEnhancedEmptyState(provider), // Premium Empty State
 
-                        child: Opacity(
-                          opacity: opacity,
-                          child: VideoStyleCard(
-                            person: likers[index],
-                            onActivated: () => _startActivationSequence(likers[index]),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                    const Spacer(),
 
-                const Spacer(),
-
-                // 3. BOTTOM DRAG INDICATOR
-                _buildDragIndicator(),
-
-                const SizedBox(height: 30),
-              ],
+                    // Show MATCH hint only if list is NOT empty
+                    if (hasLikers)
+                      _buildActionHint(Icons.keyboard_arrow_down, "DRAG DOWN TO MATCH", isTop: false),
+                    
+                    const SizedBox(height: 30),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -764,87 +708,134 @@ class _LikersListPageState extends State<LikersListPage> {
     );
   }
 
-  Widget _buildTitleSection() {
+  Widget _buildLikersCarousel(LikersProvider provider) {
+    return SizedBox(
+      height: 500,
+      child: PageView.builder(
+        controller: _pageController,
+        itemCount: provider.likers.length,
+        physics: const BouncingScrollPhysics(),
+        itemBuilder: (context, index) {
+          double relativePosition = index - _currentPage;
+          double scale = (1 - (relativePosition.abs() * .15)).clamp(0.8, 1.0);
+          double opacity = (1 - (relativePosition.abs() * 0.4)).clamp(0.5, 1.0);
+
+          return Transform.scale(
+            scale: scale,
+            child: Opacity(
+              opacity: opacity,
+              child: VideoStyleCard(profile: provider.likers[index]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEnhancedEmptyState(LikersProvider provider) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // Pulsing Background Circles
+              ...List.generate(3, (index) => Container(
+                height: 120 + (index * 40.0),
+                width: 120 + (index * 40.0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFF4D67).withOpacity(0.1 - (index * 0.03))),
+                ),
+              ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
+                begin: const Offset(0.9, 0.9),
+                end: const Offset(1.1, 1.1),
+                duration: (1000 + (index * 200)).ms,
+                curve: Curves.easeInOut,
+              )),
+              
+              const Icon(Iconsax.heart_search, color: AppColors.neonGold, size: 50),
+            ],
+          ),
+      
+                provider.isLoading?SizedBox():
+
+      
+      
+          Column(children: [  const SizedBox(height: 40),
           const Text(
-            "Liked You",
-            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
-          ),
-          // .animate().fadeIn(duration: 400.ms).slideX(begin: -0.1),
+            "Nothing here yet",
+            style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
+          const SizedBox(height: 12),
           Text(
-            "They've already swiped right. Your move!",
-            style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
-          ),
-          // .animate().fadeIn(delay: 200.ms),
+            "It looks like no one has liked you yet. Don't worry, the perfect match is just a swipe away!",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14, height: 1.5),
+          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
+          const SizedBox(height: 35),
+          ],)
+        
+          // Action Button
+          
         ],
       ),
     );
   }
 
-  Widget _buildDragIndicator() {
+  Widget _buildActionHint(IconData icon, String label, {required bool isTop}) {
     return Column(
       children: [
-        const Icon(Icons.keyboard_arrow_down, color: AppColors.neonGold, size: 32)
-            .animate(onPlay: (c) => c.repeat())
-            .moveY(begin: -8, end: 8, duration: 1.2.seconds, curve: Curves.easeInOut),
-        const SizedBox(height: 4),
-        Text(
-          "DRAG DOWN TO MATCH",
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.4), 
-            fontSize: 10, 
-            fontWeight: FontWeight.w900, 
-            letterSpacing: 2.5
-          ),
-        ),
+        if (isTop) Icon(icon, color: Colors.white.withOpacity(0.2), size: 28)
+            .animate(onPlay: (c) => c.repeat()).moveY(begin: 5, end: -5, duration: 1.5.seconds),
+        const SizedBox(height: 6),
+        Text(label,
+            style: TextStyle(
+              color: isTop ? Colors.white.withOpacity(0.2) : AppColors.neonGold.withOpacity(0.8), 
+              fontSize: 10, 
+              fontWeight: FontWeight.w900, 
+              letterSpacing: 2.5
+            )),
+        if (!isTop) const SizedBox(height: 6),
+        if (!isTop) Icon(icon, color: AppColors.neonGold.withOpacity(0.8), size: 32)
+            .animate(onPlay: (c) => c.repeat()).moveY(begin: -8, end: 8, duration: 1.2.seconds),
       ],
     );
   }
 
-  void _startActivationSequence(Map<String, dynamic> person) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (context, _, __) => MatchSuccessScreen(userImg: person['img']),
+  Widget _buildBackgroundGradient() {
+    return Positioned(
+      top: 0, left: 0, right: 0,
+      height: MediaQuery.of(context).size.height * 0.45,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [const Color(0xFFFF4D67).withOpacity(0.2), Colors.transparent],
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _glassButton(Iconsax.arrow_left_2, () => Navigator.pop(context)),
-            Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  child: Column(
-mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 10,),
-                      const Text(
-                        "Liked You",
-                        style: TextStyle(
-                          color: Colors.white, 
-                          fontSize: 28, 
-                          fontWeight: FontWeight.w900, 
-                          letterSpacing: -1
-                        ),
-                      ),
-                      Text(
-                        "Now Your move!",
-                        style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),      
+          Column(
+            children: [
+              SizedBox(height: 10,),
+              const Text("Liked You",
+                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -1)),
+              Text("Now Your move!",
+                  style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12)),
+            ],
+          ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2),
           _glassButton(Iconsax.setting_4, () {}),
         ],
       ),
@@ -862,180 +853,6 @@ mainAxisAlignment: MainAxisAlignment.center,
           border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Icon(icon, color: Colors.white, size: 22),
-      ),
-    );
-  }
-}
-
-class VideoStyleCard extends StatefulWidget {
-  final Map<String, dynamic> person;
-  final VoidCallback onActivated;
-
-  const VideoStyleCard({super.key, required this.person, required this.onActivated});
-
-  @override
-  State<VideoStyleCard> createState() => _VideoStyleCardState();
-}
-
-class _VideoStyleCardState extends State<VideoStyleCard> {
-  double _yOffset = 0;
-  bool _isTriggered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onVerticalDragUpdate: (details) {
-        if (_isTriggered) return;
-        setState(() {
-          _yOffset += details.delta.dy * 0.7; // Smooth dampened dragging
-          if (_yOffset < 0) _yOffset = 0;
-          if (_yOffset > 180) { // ACTIVATION THRESHOLD
-             _isTriggered = true;
-             widget.onActivated();
-             Future.delayed(const Duration(milliseconds: 500), () => setState(() => _isTriggered = false));
-          }
-        });
-      },
-      onVerticalDragEnd: (_) {
-        setState(() => _yOffset = 0);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, _yOffset, 0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(38),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFF4D67).withOpacity(_yOffset > 80 ? 0.3 : 0.0),
-              blurRadius: 30,
-              spreadRadius: 2,
-            ),
-            BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 15))
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(38),
-          child: Stack(
-            children: [
-              // 1. FULL COVER IMAGE
-              Positioned.fill(
-                child: Image.network(widget.person['img'], fit: BoxFit.cover),
-              ),
-
-              // 2. PREMIUM GRADIENT OVERLAY
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.5, 0.8, 1.0],
-                      colors: [
-                        Colors.black.withOpacity(0.3),
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.9),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // 3. MATCH PERCENTAGE BADGE
-              Positioned(
-                top: 25,
-                right: 25,
-                child: _glassBadge("${widget.person['match']} Match"),
-              ),
-
-              // 4. PROFILE DETAILS
-              Positioned(
-                bottom: 30,
-                left: 25,
-                right: 25,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          "${widget.person['name']}, ${widget.person['age']}",
-                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                        ),
-                        if (widget.person['verified'] == true) ...[
-                          const SizedBox(width: 8),
-                          const Icon(Iconsax.verify5, color: Colors.blue, size: 22),
-                        ]
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.person['bio'],
-                      maxLines: 2,
-                      style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, height: 1.4),
-                    ),
-                    // const SizedBox(height: 25),
-                    
-                    // // PULL TO MATCH BUTTON STYLE
-                    // Container(
-                    //   width: double.infinity,
-                    //   padding: const EdgeInsets.symmetric(vertical: 16),
-                    //   decoration: BoxDecoration(
-                    //     color: Colors.white.withOpacity(0.12),
-                    //     borderRadius: BorderRadius.circular(20),
-                    //     border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    //   ),
-                    //   alignment: Alignment.center,
-                    //   child: Row(
-                    //     mainAxisAlignment: MainAxisAlignment.center,
-                    //     children: [
-                    //       const Icon(Iconsax.heart5, color: Color(0xFFFF4D67), size: 18),
-                    //       const SizedBox(width: 10),
-                    //       const Text(
-                    //         "DRAG DOWN TO CONNECT",
-                    //         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5),
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
-                  ],
-                ),
-              ),
-
-              // 5. DRAG-OVERLAY (Visual feedback while pulling)
-              if (_yOffset > 30)
-                Positioned.fill(
-                  child: Container(
-                    color: const Color(0xFFFF4D67).withOpacity((_yOffset / 400).clamp(0, 0.5)),
-                    child: Center(
-                      child: Icon(Iconsax.heart5, color: Colors.white, size: 60 + (_yOffset / 3))
-                          .animate()
-                          .scale(duration: 200.ms),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ).animate().slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOutBack),
-    );
-  }
-
-  Widget _glassBadge(String text) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-        ),
       ),
     );
   }
