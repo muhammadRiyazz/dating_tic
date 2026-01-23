@@ -1,4 +1,4 @@
-package com.example.dating
+package com.dating.weekendtest
 
 import io.flutter.embedding.android.FlutterActivity
 

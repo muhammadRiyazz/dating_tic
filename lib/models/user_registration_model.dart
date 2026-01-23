@@ -17,8 +17,7 @@ class UserRegistrationModel {
   final String? address;
   final String? bio;
   final List<String>? photos;
-    final List<String>? interests;
-
+  final List<String>? interests;
   final String? mainPhotoUrl;
 
   const UserRegistrationModel({

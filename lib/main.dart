@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:math';
-import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:developer';
 import 'package:dating/pages/first_page.dart';
 import 'package:dating/pages/home/home_screen.dart';
 import 'package:dating/pages/registration%20pages/splash_screen.dart';
-import 'package:dating/pages/registration%20pages/welcom_screens.dart';
 import 'package:dating/providers/interaction_provider.dart';
 import 'package:dating/providers/likers_provider.dart';
 import 'package:dating/providers/matches_provider.dart';
@@ -13,36 +10,51 @@ import 'package:dating/providers/phone_registration_provider.dart';
 import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/providers/registration_data_provider.dart' ;
 import 'package:dating/services/auth_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'services/notification_service.dart';
 
-void main() {
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-  ));
+
+
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  
+  // Initialize notifications (non-blocking)
+  // WidgetsBinding.instance.addPostFrameCallback((_) {
+  //   FirebaseNotificationService.init();
+  // });
+
+  // Background handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(
     MultiProvider(
       providers: [
-    ChangeNotifierProvider(create: (_) => RegistrationProvider()),
-    ChangeNotifierProvider(create: (_) => RegistrationDataProvider()),       
-        ChangeNotifierProvider(create: (_) => HomeProvider()),       
-     ChangeNotifierProvider(create: (_) => LikersProvider()), 
-          ChangeNotifierProvider(create: (_) => MatchesProvider()), // Add this
-// Add this
-
-     ChangeNotifierProvider(create: (_) => InteractionProvider()), // Add this
-
-        // Add other providers here
+        ChangeNotifierProvider(create: (_) => RegistrationProvider()),
+        ChangeNotifierProvider(create: (_) => RegistrationDataProvider()),
+        ChangeNotifierProvider(create: (_) => HomeProvider()),
+        ChangeNotifierProvider(create: (_) => LikersProvider()),
+        ChangeNotifierProvider(create: (_) => MatchesProvider()),
+        ChangeNotifierProvider(create: (_) => InteractionProvider()),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  log("🌙 Background notification: ${message.messageId}");
+}
 // ----------------------------------------
 // 1. THEME & COLORS
 // ----------------------------------------
@@ -62,6 +74,10 @@ class AppColors {
 }
 
 
+
+
+
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
@@ -75,7 +91,9 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Arial',
         useMaterial3: true,
       ),
-      home: AuthChecker(),
+      home:
+      //  NotificationDebugScreen(),
+      AuthChecker(),
       // const SplashScreen(),
       // WeekendHome(),
       // DatingIntroScreen(),

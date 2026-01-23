@@ -5,8 +5,10 @@ import 'package:confetti/confetti.dart'; // Add this
 import 'package:flutter_animate/flutter_animate.dart'; // Add this
 
 class MatchSuccessScreen extends StatefulWidget {
-  final String userImg;
-  const MatchSuccessScreen({super.key, required this.userImg});
+  final String touserImg;
+    final String fromuserImg;
+
+  const MatchSuccessScreen({super.key, required this.fromuserImg ,required this.touserImg});
 
   @override
   State<MatchSuccessScreen> createState() => _MatchSuccessScreenState();
@@ -83,7 +85,7 @@ class _MatchSuccessScreenState extends State<MatchSuccessScreen> {
                           offset: const Offset(-50, 20),
                           child: Transform.rotate(
                             angle: -0.1,
-                            child: _buildCard("https://images.unsplash.com/photo-1539571696357-5a69c17a67c6"),
+                            child: _buildCard(widget.fromuserImg),
                           ),
                         ).animate().scale(delay: 200.ms, duration: 600.ms, curve: Curves.elasticOut).moveY(begin: 100, end: 0),
 
@@ -92,7 +94,7 @@ class _MatchSuccessScreenState extends State<MatchSuccessScreen> {
                           offset: const Offset(50, 25),
                           child: Transform.rotate(
                             angle: 0.1,
-                            child: _buildCard(widget.userImg),
+                            child: _buildCard(widget.touserImg),
                           ),
                         ).animate().scale(delay: 400.ms, duration: 600.ms, curve: Curves.elasticOut).moveY(begin: 100, end: 0),
                       ],

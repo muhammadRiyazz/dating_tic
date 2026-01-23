@@ -4,6 +4,7 @@ import 'package:dating/models/profile_model.dart';
 import 'package:dating/pages/maches/Match_Success_Screen.dart';
 import 'package:dating/providers/interaction_provider.dart';
 import 'package:dating/providers/likers_provider.dart';
+import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,7 +39,9 @@ class _VideoStyleCardState extends State<VideoStyleCard> {
   void _executeAction(String status) async {
     final interactionProv = context.read<InteractionProvider>();
     final likersProv = context.read<LikersProvider>();
+
     final myId = await AuthService().getUserId();
+    final myPhoto = await AuthService().getUserPhoto();
 
     if (status == 'like') {
       HapticFeedback.heavyImpact();
@@ -51,14 +54,16 @@ class _VideoStyleCardState extends State<VideoStyleCard> {
       fromUser: myId.toString(),
       toUser: widget.profile.userId.toString(),
       status: status,
-      onComplete: () {
-        if (status == 'like') {
-          Navigator.push(context, PageRouteBuilder(
-            opaque: false,
-            transitionDuration: const Duration(milliseconds: 600),
-            pageBuilder: (context, _, __) => MatchSuccessScreen(userImg: widget.profile.photo),
-          ));
-        }
+      matchedfromUserImg: myPhoto??'',
+      matchedUserImg:  widget.profile.photo,
+      onComplete: ()async {
+    
+
+               final userId = await AuthService().getUserId();
+    if (mounted) {
+      context.read<MatchesProvider>().fetchMatches(userId.toString());
+      // context.read<LikersProvider>().fetchLikers(userId.toString());
+    }
         likersProv.removeLikerLocally(widget.profile.userId);
       },
     );

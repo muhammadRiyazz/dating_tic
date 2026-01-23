@@ -209,6 +209,41 @@ class RegistrationDataService {
 class RegistrationService {
   static const String _baseUrl = 'https://tictechnologies.in/stage/weekend';
 
+
+
+  
+Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
+    try {
+      final url = Uri.parse('$_baseUrl/main-photo-by-id');
+      final response = await http.post(
+        url,
+        body: {'userId': userId},
+      );
+
+      log('Main photo response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['status'] == 'SUCCESS') {
+          // Return the photo URL string from the nested data object
+          return ApiResponse(
+            success: true,
+            data: jsonResponse['data']['photo'].toString(),
+            statusDesc: jsonResponse['statusDesc'],
+          );
+        } else {
+          return ApiResponse(
+            success: false,
+            error: jsonResponse['statusDesc'] ?? 'Failed to fetch photo',
+          );
+        }
+      }
+      return ApiResponse(success: false, error: 'Server error: ${response.statusCode}');
+    } catch (e) {
+      return ApiResponse(success: false, error: 'Network error: $e');
+    }
+  }
+
   // Send phone number - returns whether user is already registered or new
   Future<ApiResponse<Map<String, dynamic>>> sendPhoneNumber({
     required String phone,
@@ -314,7 +349,13 @@ class RegistrationService {
       );
     }
   }
-}Future<void> fetchprofiles(BuildContext context)async{
+}
+
+
+
+
+
+Future<void> fetchprofiles(BuildContext context)async{
 final authService = AuthService();
     final userId = await authService.getUserId();
 

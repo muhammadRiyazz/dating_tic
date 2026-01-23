@@ -655,6 +655,7 @@ class _LikersListPageState extends State<LikersListPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final userId = await AuthService().getUserId();
+      
       if (mounted) {
         context.read<LikersProvider>().fetchLikers(userId.toString());
       }

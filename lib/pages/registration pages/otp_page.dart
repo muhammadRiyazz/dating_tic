@@ -151,9 +151,14 @@ void _verifyOTP() async {
 
   if (provider.otpIsSuccess) {
     if (provider.isLoginSuccessful) {
+
+
+
+
       // Save login state for existing users
       final authService = AuthService();
       await authService.login(
+        photo: '',
         userId: provider.userId.toString(),
         phone: widget.phoneNumber,
       );

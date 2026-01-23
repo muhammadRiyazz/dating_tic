@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating/models/profile_model.dart';
 import 'package:dating/pages/home/widgets/icons.dart';
 import 'package:dating/pages/user_profile_page.dart';
+import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dating/main.dart';
@@ -90,47 +91,51 @@ class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> with Ticker
     super.dispose();
   }
 
-  void _onInteraction(String status) async {
-    setState(() => _interactionStatus = status);
-    
-    final interactionProv = Provider.of<InteractionProvider>(context, listen: false);
-    final homeProv = Provider.of<HomeProvider>(context, listen: false);
-    final authService = AuthService();
-    final userId = await authService.getUserId();
+// inside _ImmersiveProfileCardState
 
-    // 1. Play central icon pop animation
-    _overlayController.forward();
+void _onInteraction(String status) async {
+  setState(() => _interactionStatus = status);
+  
+  final interactionProv = Provider.of<InteractionProvider>(context, listen: false);
+  final homeProv = Provider.of<HomeProvider>(context, listen: false);
+  final authService = AuthService();
+  final userId = await authService.getUserId();
+    final myPhoto = await authService.getUserPhoto();
 
-    // 2. Set slide direction
-    Offset endOffset = status == 'like' ? const Offset(1.5, 0.2) : const Offset(-1.5, 0.2);
-    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: endOffset).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeInOutCubic)
-    );
+  _overlayController.forward();
 
-    // 3. Haptics
-    if (status == 'like') {
-      HapticFeedback.heavyImpact();
-    } else {
-      HapticFeedback.mediumImpact();
-    }
+  Offset endOffset = status == 'like' ? const Offset(1.5, 0.2) : const Offset(-1.5, 0.2);
+  _slideAnimation = Tween<Offset>(begin: Offset.zero, end: endOffset).animate(
+    CurvedAnimation(parent: _slideController, curve: Curves.easeInOutCubic)
+  );
 
-    // 4. Wait for pop animation, then slide out
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _slideController.forward().then((_) {
-        // 5. Trigger API and remove from local list
-        interactionProv.handleAction(
-          context: context,
-          fromUser: userId.toString(),
-          toUser: widget.profile.userId.toString(),
-          status: status,
-          onComplete: () {
-            homeProv.removeProfileLocally(widget.profile.userId);
-          },
-        );
-      });
-    });
+  if (status == 'like') {
+    HapticFeedback.heavyImpact();
+  } else {
+    HapticFeedback.mediumImpact();
   }
 
+  Future.delayed(const Duration(milliseconds: 300), () {
+    _slideController.forward().then((_) {
+      interactionProv.handleAction(
+        matchedfromUserImg: myPhoto??'',
+        context: context,
+        fromUser: userId.toString(),
+        toUser: widget.profile.userId.toString(),
+        status: status,
+        matchedUserImg: widget.profile.photo, // Pass the image here
+        onComplete: ()async {
+           final userId = await AuthService().getUserId();
+    if (mounted) {
+      context.read<MatchesProvider>().fetchMatches(userId.toString());
+      // context.read<LikersProvider>().fetchLikers(userId.toString());
+    }
+          homeProv.removeProfileLocally(widget.profile.userId);
+        },
+      );
+    });
+  });
+}
   int _calculateAge(String? dobString) {
     if (dobString == null || dobString.isEmpty) return 0;
     try {

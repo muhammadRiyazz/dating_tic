@@ -12,7 +12,9 @@ class LikedService {
         Uri.parse(_baseUrl),
         body: {'userId': userId},
       );
-log(response.body.toString());
+
+    log(userId);
+     log(response.body.toString());
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['status'] == "SUCCESS") {

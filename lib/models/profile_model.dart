@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 class GoalProfile {
   final int goalId;
@@ -88,7 +89,7 @@ class Profile {
           photosList = (json['photos'] as List).map((e) => e.toString()).toList();
         }
       } catch (e) {
-        print('Error parsing photos: $e');
+        log('Error parsing photos: $e');
       }
     }
 

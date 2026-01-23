@@ -32,6 +32,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Firebase Configuration -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 
 	<!-- Network & Security Settings -->
 	<key>NSAppTransportSecurity</key>
@@ -76,6 +80,10 @@
 	<key>NSVisionUsageDescription</key>
 	<string>This app analyzes uploaded images to detect faces and blur inappropriate content for user safety.</string>
 
+	<!-- Notification Permissions -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>This app needs to send you notifications for new matches, messages, and updates.</string>
+	
 	<!-- Orientation Settings -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
@@ -91,7 +99,7 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
-	<!-- Notification Background Modes (Optional but recommended for location apps) -->
+	<!-- Notification Background Modes -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
