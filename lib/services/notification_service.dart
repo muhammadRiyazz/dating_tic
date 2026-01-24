@@ -548,9 +548,12 @@
 //   }
 // }
 
+import 'package:http/http.dart' as http;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
+import 'package:dating/core/url.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -604,6 +607,49 @@ class FirebaseNotificationService {
       log("❌ Notification init error: $e");
     }
   }
+
+
+
+  Future<bool> updateFCMTokenToServer(String userId) async {
+    if (_fcmToken == null || _fcmToken!.isEmpty) {
+      log("⚠️ No FCM token to update");
+      return false;
+    }
+
+    try {
+      log("📤 Updating FCM token for user: $userId");
+      
+      final response = await http.post(
+        Uri.parse("$baseUrl/update-notification-fcm"),
+        body: {
+          'userId': userId,
+          'notificationFcm': _fcmToken!,
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      log("FCM Update Response: ${response.statusCode} - ${response.body}");
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['status'] == 'SUCCESS' && jsonResponse['statusCode'] == 0) {
+          log("✅ FCM token updated successfully");
+          return true;
+        } else {
+          log("❌ FCM update API failed: ${jsonResponse['statusDesc']}");
+          return false;
+        }
+      } else {
+        log("❌ FCM update HTTP error: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      log("❌ Error updating FCM token: $e");
+      return false;
+    }
+  }
+
+
+
 
   static Future<void> _requestPermissions() async {
     try {

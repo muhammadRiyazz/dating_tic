@@ -134,14 +134,14 @@ class _DatingIntroScreenState extends State<DatingIntroScreen> {
         // Fetch location and wait briefly so the next page has data
         await LocationManager().fetchAndCacheLocation();
         if (!mounted) return;
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (_) =>  PhoneNumberPage()),
         );
       } catch (e) {
         log("Location fetch failed: $e");
         // Still navigate, LocationPage will handle the fallback
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (_) =>  PhoneNumberPage()),
         );

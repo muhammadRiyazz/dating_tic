@@ -1,4 +1,5 @@
 import 'package:dating/main.dart';
+import 'package:dating/providers/my_profile_provider.dart';
 import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,8 @@ final authService = AuthService();
     // 2. If we have a userId, trigger the Home API call immediately
     if (userId != null ) {
       // ignore: use_build_context_synchronously
+              context.read<MyProfileProvider>().fetchUserProfile(userId);
+
       Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
     }
     // 3. Keep splash visible for branding

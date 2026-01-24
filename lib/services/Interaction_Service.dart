@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:dating/core/url.dart';
 import 'package:http/http.dart' as http;
 
 class InteractionService {
-  final String baseUrl = "https://tictechnologies.in/stage/weekend/user-interactions";
 
   Future<Map<String, dynamic>> postInteraction({
     required String fromUser,
@@ -12,7 +12,7 @@ class InteractionService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse(baseUrl),
+        Uri.parse("$baseUrl/user-interactions"),
         body: {
           'from_user': fromUser,
           'to_user': toUser,

@@ -1,4 +1,6 @@
 // lib/pages/registration/phone_number_input.dart
+import 'dart:ui';
+
 import 'package:dating/main.dart';
 import 'package:dating/pages/registration%20pages/otp_page.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
@@ -81,7 +83,8 @@ void _sendOTP() async {
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
       body: Container(
-         decoration: BoxDecoration(  gradient: LinearGradient(
+         decoration: BoxDecoration( 
+           gradient: LinearGradient(
                     colors: [
                       AppColors.neonGold.withOpacity(0.1),
                       Colors.transparent,
@@ -201,50 +204,21 @@ stops: const [0.3, 1.0],
                             border: Border.all(
                               color: provider.hasError 
                                 ? Colors.red.withOpacity(0.5) 
-                                : Colors.white.withOpacity(0.1)
+                                : Colors.white.withOpacity(0.0)
                             ),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
                             children: [
                               // Country code
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Row(
-                                  children: [
-                                    CountryCodePicker(
-                                      onChanged: (c) {
-                                        setState(() {
-                                          _countryCode = c.dialCode!;
-                                        });
-                                        // Reset error when user changes country code
-                                        if (provider.hasError) {
-                                          provider.reset();
-                                        }
-                                      },
-                                      initialSelection: 'IN',
-                                      textStyle: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      padding: EdgeInsets.zero,
-                                      showFlag: true,
-                                      flagWidth: 20,
-                                      backgroundColor: Colors.black,
-                                      boxDecoration: BoxDecoration(
-                                        color: AppColors.cardBlack,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.1),
-                                        ),
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.arrow_drop_down,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                CountryCodePicker(
+                onChanged: (c) => setState(() => _countryCode = c.dialCode!),
+                initialSelection: 'IN',
+                textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                showFlag: true,
+                padding: const EdgeInsets.all(10),
+                dialogBackgroundColor: const Color(0xFF121212),
+              ),
                               const SizedBox(
                                 height: 30,
                                 child: VerticalDivider(
@@ -288,7 +262,7 @@ stops: const [0.3, 1.0],
                             ],
                           ),
                         ),
-        
+    
                         // Privacy note
                         const SizedBox(height: 20),
                         Container(
@@ -370,3 +344,10 @@ stops: const [0.3, 1.0],
     );
   }
 }
+
+
+
+
+
+
+

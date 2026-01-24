@@ -1,24 +1,28 @@
-// lib/pages/registration/otp_page.dart
+import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/home/home_screen.dart';
 import 'package:dating/pages/registration%20pages/name_page.dart';
-import 'package:dating/pages/registration%20pages/splash_screen.dart';
-import 'package:dating/providers/phone_registration_provider.dart';
-import 'package:dating/providers/profile_provider.dart';
+import 'package:dating/providers/my_profile_provider.dart';
 import 'package:dating/services/auth_service.dart';
-
+import 'package:dating/services/notification_service.dart';
+import 'package:dating/services/registration_service.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:dating/providers/phone_registration_provider.dart';
+import 'package:dating/providers/profile_provider.dart';
+import 'package:http/http.dart' as http;
 
 class OTPVerificationPage extends StatefulWidget {
   final String phoneNumber;
   final String countryCode;
   final String userRegTempId;
-  final bool isExistingUser; // Pass this from phone page
+  final bool isExistingUser;
 
   const OTPVerificationPage({
     Key? key,
@@ -39,6 +43,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   int _timerSeconds = 30;
   bool _showResend = false;
   String _enteredOTP = '';
+  bool _isProcessingFCM = false;
+  String? _fcmToken;
 
   @override
   void initState() {
@@ -117,87 +123,228 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       _startTimer();
       
       if (!provider.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.neonGold,
-            content: Row(
-              children: [
-                Icon(Iconsax.tick_circle5, color: Colors.black, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  'OTP sent successfully',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        _showSuccessSnackbar('OTP sent successfully');
+      }
+    }
+  }
+
+  // ==================== FCM TOKEN HANDLING ====================
+
+  Future<bool> _initializeAndGetFCMToken() async {
+    try {
+      setState(() {
+        _isProcessingFCM = true;
+      });
+
+      log("🚀 Starting notification setup for user...");
+
+      // Initialize notifications
+      await FirebaseNotificationService.init();
+      
+      // Wait a bit for initialization
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Try to get token
+      String? token = await FirebaseNotificationService.getToken(retry: true);
+      
+      if (token == null || token.isEmpty) {
+        // Try force refresh
+        token = await FirebaseNotificationService.forceRefreshToken();
+      }
+      
+      if (token != null && token.isNotEmpty) {
+        _fcmToken = token;
+        log("✅ FCM Token obtained: $token");
+        return true;
+      } else {
+        log("⚠️ No FCM token available - continuing without notifications");
+        return false;
+      }
+    } catch (e) {
+      log("❌ Error getting FCM token: $e");
+      return false;
+    } finally {
+      setState(() {
+        _isProcessingFCM = false;
+      });
+    }
+  }
+
+
+
+  // ==================== OTP VERIFICATION ====================
+
+  Future<void> _verifyOTP() async {
+    if (_enteredOTP.length != 4) return;
+    
+    final provider = context.read<RegistrationProvider>();
+    
+    await provider.verifyOTP(
+      userRegTempId: widget.userRegTempId,
+      otp: _enteredOTP,
+    );
+
+    if (provider.otpIsSuccess) {
+      if (provider.isLoginSuccessful) {
+        // Handle EXISTING USER login
+        await _handleExistingUserLogin(provider);
+      } else if (provider.isRegisterSuccessful) {
+        // Handle NEW USER registration
+        await _handleNewUserRegistration(provider);
+      }
+    } else {
+      _showErrorSnackbar(provider.otpError ?? 'OTP verification failed');
+    }
+  }
+
+  Future<void> _handleExistingUserLogin(RegistrationProvider provider) async {
+    try {
+      // Step 1: Get FCM token
+      bool fcmSuccess = await _initializeAndGetFCMToken();
+      
+      if (fcmSuccess && _fcmToken != null) {
+        // Step 2: Update FCM token to server
+        await FirebaseNotificationService(). updateFCMTokenToServer(provider.userId.toString());
+      }
+      
+      // Step 3: Save login state
+      final authService = AuthService();
+      await authService.login(
+        userId: provider.userId.toString(),
+        phone: widget.phoneNumber,
+        token: '', // Get from API if available
+        name: '', // Get from API if available
+        photo: '', // Get from API if available
+      );
+
+      // Step 4: Fetch user's main photo
+      // try {
+      //   final photoService = RegistrationService();
+      //   final photoResponse = await photoService.getUserMainPhoto(provider.userId.toString());
+      //   if (photoResponse.success && photoResponse.data != null) {
+      //     await authService.updateUserPhoto(photoResponse.data!);
+      //   }
+      // } catch (e) {
+      //   log("⚠️ Error fetching user photo: $e");
+      // }
+
+      // Step 5: Trigger home data fetch
+      final userId = await authService.getUserId();
+      if (userId != null) {
+        Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
+        context.read<MyProfileProvider>().fetchUserProfile(userId);
+
+      }
+
+      _showSuccessSnackbar('Welcome back!');
+      
+      // Step 6: Navigate to home
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (mounted) {
+
+
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const WeekendHome()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      log("❌ Error in login flow: $e");
+      _showErrorSnackbar('Login successful but some features may not work');
+      // Still navigate to home even if FCM fails
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const WeekendHome()),
+          (route) => false,
         );
       }
     }
   }
 
-void _verifyOTP() async {
-  if (_enteredOTP.length != 4) return;
-  
-  final provider = context.read<RegistrationProvider>();
-  
-  await provider.verifyOTP(
-    userRegTempId: widget.userRegTempId,
-    otp: _enteredOTP,
-  );
-
-  if (provider.otpIsSuccess) {
-    if (provider.isLoginSuccessful) {
-
-
-
-
-      // Save login state for existing users
-      final authService = AuthService();
-      await authService.login(
-        photo: '',
-        userId: provider.userId.toString(),
-        phone: widget.phoneNumber,
-      );
+  Future<void> _handleNewUserRegistration(RegistrationProvider provider) async {
+    try {
+      // Step 1: Get FCM token (but don't send to server yet - will be sent in final registration)
+      // bool fcmSuccess = await _initializeAndGetFCMToken();
       
+      // if (!fcmSuccess) {
+      //   log("⚠️ FCM token not available for new user - continuing registration");
+      // }
 
-    final userId = await authService.getUserId();
-
-    // 2. If we have a userId, trigger the Home API call immediately
-    if (userId != null ) {
-      // ignore: use_build_context_synchronously
-      Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
-    }
-
-
-
-      // Navigate to home page for existing users
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const WeekendHome()),
-        (route) => false,
-      );
-    } else if (provider.isRegisterSuccessful) {
-      log('provider --- userId ---');
-      log(provider.userId.toString());
-
-      // Create model with userId
+      // Step 2: Create model with userId
       final UserRegistrationModel userdata = UserRegistrationModel().copyWith(
         userRegId: provider.userId,
       );
 
-      log(userdata.userRegId.toString());
+      log("📝 New user ID: ${userdata.userRegId}");
       
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => NamePage(userdata: userdata)),
-      );
+      // Step 3: Navigate to name page
+      _showSuccessSnackbar('OTP verified! Please complete your profile');
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NamePage(userdata: userdata),
+          ),
+        );
+      }
+    } catch (e) {
+      log("❌ Error in registration flow: $e");
+      _showErrorSnackbar('Please try again');
     }
   }
-}
+
+  // ==================== UI HELPERS ====================
+
+  void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.neonGold,
+        content: Row(
+          children: [
+            Icon(Iconsax.tick_circle5, color: Colors.black, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              message,
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red.shade900,
+        content: Row(
+          children: [
+            Icon(Iconsax.info_circle, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              message,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== UI BUILD ====================
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +444,6 @@ void _verifyOTP() async {
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
-                            // fontStyle: FontStyle.italic,
                             height: 1.1,
                             letterSpacing: -0.5,
                           ),
@@ -305,7 +451,7 @@ void _verifyOTP() async {
                       ),
                       const SizedBox(height: 8),
                       
-                      // Dynamic message based on user type
+                      // Dynamic message
                       RichText(
                         text: TextSpan(
                           style: TextStyle(
@@ -331,7 +477,6 @@ void _verifyOTP() async {
                         ),
                       ),
                       
-                      // Additional message for existing users
                       if (widget.isExistingUser) ...[
                         const SizedBox(height: 8),
                         Text(
@@ -372,6 +517,42 @@ void _verifyOTP() async {
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      
+                      // FCM processing indicator
+                      if (_isProcessingFCM)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.neonGold.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.neonGold.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.neonGold,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Setting up notifications...',
+                                style: TextStyle(
+                                  color: AppColors.neonGold,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -516,11 +697,6 @@ void _verifyOTP() async {
                             ? Colors.green.withOpacity(0.05) 
                             : AppColors.neonGold.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(16),
-                          // border: Border.all(
-                          //   color: widget.isExistingUser 
-                          //     ? Colors.green.withOpacity(0.2) 
-                          //     : AppColors.neonGold.withOpacity(0.2),
-                          // ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -553,12 +729,16 @@ void _verifyOTP() async {
                   ),
                 ),
                 
-                // Verify/Login Button with dynamic text
+                // Verify/Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _enteredOTP.length == 4 && !provider.otpIsLoading ? _verifyOTP : null,
+                    onPressed: (_enteredOTP.length == 4 && 
+                              !provider.otpIsLoading && 
+                              !_isProcessingFCM) 
+                        ? _verifyOTP 
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: widget.isExistingUser ? Colors.green : AppColors.neonGold,
                       foregroundColor: Colors.black,
@@ -570,7 +750,7 @@ void _verifyOTP() async {
                         ? Colors.green.withOpacity(0.3) 
                         : AppColors.neonGold.withOpacity(0.3),
                     ),
-                    child: provider.otpIsLoading
+                    child: provider.otpIsLoading || _isProcessingFCM
                         ? SizedBox(
                             width: 24,
                             height: 24,
@@ -599,3 +779,4 @@ void _verifyOTP() async {
     );
   }
 }
+

@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:dating/core/url.dart';
 import 'package:dating/models/profile_model.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -27,7 +28,7 @@ void removeProfileLocally(int profileId) {
 log('user id ------- $userId');
     try {
       final response = await http.post(
-        Uri.parse('https://tictechnologies.in/stage/weekend/profile-grouped-by-goal'),
+        Uri.parse('$baseUrl/profile-grouped-by-goal'),
         body: {'userId': userId},
       );
 log(response.body);

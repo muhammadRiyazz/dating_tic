@@ -1,6 +1,10 @@
 // lib/services/registration_service.dart
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
+import 'package:dating/core/url.dart';
+import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -30,12 +34,11 @@ class ApiResponse<T> {
 }
 
 class RegistrationDataService {
-  static const String _baseUrl = 'https://tictechnologies.in/stage/weekend';
 
   // Get Relationship Goals
   Future<ApiResponse<List<Map<String, dynamic>>>> getRelationshipGoals(String genderId) async {
     try {
-      final url = Uri.parse('$_baseUrl/relationship-goal');
+      final url = Uri.parse('$baseUrl/relationship-goal');
       log(genderId);
       final response = await http.post(
         url,
@@ -82,7 +85,7 @@ class RegistrationDataService {
   // Get Genders
   Future<ApiResponse<List<Map<String, dynamic>>>> getGenders() async {
     try {
-      final url = Uri.parse('$_baseUrl/gender');
+      final url = Uri.parse('$baseUrl/gender');
       final response = await http.post(url);
 
       log('Genders response: ${response.body}');
@@ -124,7 +127,7 @@ class RegistrationDataService {
   // Get Education Levels
   Future<ApiResponse<List<Map<String, dynamic>>>> getEducationLevels() async {
     try {
-      final url = Uri.parse('$_baseUrl/education');
+      final url = Uri.parse('$baseUrl/education');
       final response = await http.post(url);
 
       log('Education response: ${response.body}');
@@ -166,7 +169,7 @@ class RegistrationDataService {
   // Get Interests
   Future<ApiResponse<List<Map<String, dynamic>>>> getInterests() async {
     try {
-      final url = Uri.parse('$_baseUrl/interests');
+      final url = Uri.parse('$baseUrl/interests');
       final response = await http.post(url);
 
       log('Interests response: ${response.body}');
@@ -207,14 +210,13 @@ class RegistrationDataService {
 }
 
 class RegistrationService {
-  static const String _baseUrl = 'https://tictechnologies.in/stage/weekend';
 
 
 
   
 Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
     try {
-      final url = Uri.parse('$_baseUrl/main-photo-by-id');
+      final url = Uri.parse('$baseUrl/main-photo-by-id');
       final response = await http.post(
         url,
         body: {'userId': userId},
@@ -250,7 +252,7 @@ Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
     required String countryCode,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/registration');
+      final url = Uri.parse('$baseUrl/registration');
       
       final response = await http.post(
         url,
@@ -297,13 +299,102 @@ Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
     }
   }
 
+ Map<String, String> prepareAPIRequest(UserRegistrationModel data,String  fcmToken) {
+    return {
+      'userRegId': data.userRegId?.toString() ?? '',
+      'user_name': data.userName ?? '',
+      'date_of_birth': data.dateOfBirth ?? '',
+      'gender': data.gender ?? '',
+      'height': data.height?.toString() ?? '',
+      'smoking_habit': data.smokingHabit ?? '',
+      'drinking_habit': data.drinkingHabit ?? '',
+      'relationship_goal': data.relationshipGoal ?? '',
+      'job': data.job ?? '',
+      'education': data.education?.toString() ?? '',
+      'latitude': data.latitude?.toString() ?? '0.0',
+      'longitude': data.longitude?.toString() ?? '0.0',
+      'city': data.city ?? 'test',
+      'state': data.state ?? 'test',
+      'country': data.country ?? 'test',
+      'address': data.address ?? 'test',
+      'bio': data.bio ?? '',
+      'photos': jsonEncode(data.photos),
+      'interests': jsonEncode(data.interests),
+      'mainphotourl': data.mainPhotoUrl?.toString() ?? '',
+      'notificationFcm': fcmToken ,
+      'last_seen': DateTime.now().toIso8601String(),
+      'Is_live': '1',
+    };
+  }
+
+ Future<Map<String, dynamic>> updateProfileToAPI(UserRegistrationModel data ,String  fcmToken) async {
+    try {
+      final Map<String, String> requestBody = prepareAPIRequest(data ,fcmToken);
+      
+      final response = await http.post(
+        Uri.parse("$baseUrl/update-profile"),
+        body: requestBody,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        if (responseData['status'] == 'SUCCESS' || responseData['statusCode'] == 0) {
+          return {
+            'success': true,
+            'message': responseData['statusDesc'] ?? 'Profile updated successfully',
+            'data': responseData,
+          };
+        } else {
+          return {
+            'success': false,
+            'message': responseData['statusDesc'] ?? 'Failed to update profile',
+            'error': 'API_ERROR',
+          };
+        }
+      } else {
+        return {
+          'success': false,
+          'message': 'Server error: ${response.statusCode}',
+          'error': 'HTTP_ERROR',
+        };
+      }
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.message}',
+        'error': 'NETWORK_ERROR',
+      };
+    } on SocketException {
+      return {
+        'success': false,
+        'message': 'No internet connection',
+        'error': 'SOCKET_ERROR',
+      };
+    } on TimeoutException {
+      return {
+        'success': false,
+        'message': 'Request timeout',
+        'error': 'TIMEOUT_ERROR',
+      };
+    } catch (e) {
+      log(e.toString());
+      return {
+        'success': false,
+        'message': 'Unexpected error: ${e.toString()}',
+        'error': 'UNKNOWN_ERROR',
+      };
+    }
+  }
+
+
   // Verify OTP - returns user ID and whether it's login or registration
   Future<ApiResponse<Map<String, dynamic>>> verifyOTP({
     required String userRegTempId,
     required String otp,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/registration-otp-verification');
+      final url = Uri.parse('$baseUrl/registration-otp-verification');
       
       final response = await http.post(
         url,

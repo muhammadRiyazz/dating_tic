@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:dating/core/url.dart';
 import 'package:http/http.dart' as http;
 import 'package:dating/models/profile_model.dart';
 
 class LikedService {
-  static const String _baseUrl = "https://tictechnologies.in/stage/weekend/liked-profiles-list";
 
   Future<List<Profile>> getLikedProfiles(String userId) async {
     try {
       final response = await http.post(
-        Uri.parse(_baseUrl),
+        Uri.parse("$baseUrl/liked-profiles-list"),
         body: {'userId': userId},
       );
 

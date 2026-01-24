@@ -1,17 +1,18 @@
 import 'dart:convert';
+import 'dart:developer';
+import 'package:dating/core/url.dart';
 import 'package:http/http.dart' as http;
 import 'package:dating/models/profile_model.dart';
 
 class MatchesService {
-  static const String _url = "https://tictechnologies.in/stage/weekend/matched-profiles-list";
 
   Future<List<Profile>> getMatches(String userId) async {
     try {
       final response = await http.post(
-        Uri.parse(_url),
+        Uri.parse("$baseUrl/matched-profiles-list"),
         body: {'userId': userId},
       );
-
+log(response.body.toString());
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == "SUCCESS") {

@@ -6,6 +6,7 @@ import 'package:dating/pages/registration%20pages/splash_screen.dart';
 import 'package:dating/providers/interaction_provider.dart';
 import 'package:dating/providers/likers_provider.dart';
 import 'package:dating/providers/matches_provider.dart';
+import 'package:dating/providers/my_profile_provider.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
 import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/providers/registration_data_provider.dart' ;
@@ -22,11 +23,12 @@ import 'services/notification_service.dart';
 
 
 void main() async {
+
   WidgetsFlutterBinding.ensureInitialized();
-  
   // Initialize Firebase
   await Firebase.initializeApp();
   
+
   // Initialize notifications (non-blocking)
   // WidgetsBinding.instance.addPostFrameCallback((_) {
   //   FirebaseNotificationService.init();
@@ -38,6 +40,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        // ChangeNotifierProvider(create: (_) => GlobalUserProvider()),
+        ChangeNotifierProvider(create: (_) => MyProfileProvider()),
         ChangeNotifierProvider(create: (_) => RegistrationProvider()),
         ChangeNotifierProvider(create: (_) => RegistrationDataProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
@@ -60,6 +64,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 // ----------------------------------------
 
 class AppColors {
+    static const Color bg = Color(0xFF0A0A0A);
+  static const Color neonPink = Color(0xFFFF4D67);
+  static const Color glassWhite = Colors.white10;
     static const Color deepBlack = Color(0xFF000000);
   static const Color accentGold = Color(0xFFD4AF37);
   static const Color mutedGold = Color(0xFF8B7322);

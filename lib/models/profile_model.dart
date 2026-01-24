@@ -38,6 +38,7 @@ class Profile {
   final String? job;
   final Gender gender;
   final Education education;
+  final RelationshipGoal? relationshipGoal;
   final List<Interest> interests;
   final String? latitude;
   final String? longitude;
@@ -53,6 +54,8 @@ class Profile {
     required this.userId,
     required this.userName,
     this.phno,
+        this.relationshipGoal,
+
     this.countryCode,
     this.dateOfBirth,
     this.height,
@@ -192,6 +195,29 @@ class Interest {
     );
   }
 }
+
+
+
+class RelationshipGoal {
+  final int id;
+  final String name;
+  final String emoji;
+
+  RelationshipGoal({
+    required this.id,
+    required this.name,
+    required this.emoji,
+  });
+
+  factory RelationshipGoal.fromJson(Map<String, dynamic> json) {
+    return RelationshipGoal(
+      id: json['id'],
+      name: json['name'],
+      emoji: json['emoji'] ?? '',
+    );
+  }
+}
+
 
 class ProfileResponse {
   final String status;

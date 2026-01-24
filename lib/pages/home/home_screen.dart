@@ -1,19 +1,18 @@
-import 'dart:math' as math;
 import 'dart:ui';
-import 'package:dating/pages/maches/match_page.dart';
-import 'package:dating/pages/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; // Add this
+import 'package:shimmer/shimmer.dart';
 
 // Your existing imports
 import 'package:dating/main.dart';
 import 'package:dating/models/profile_model.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:dating/providers/profile_provider.dart';
+import 'package:dating/pages/maches/match_page.dart';
+import 'package:dating/pages/profile/profile_page.dart';
 
 // Your category page imports
 import 'package:dating/pages/home/categories/categories_page_1.dart';
@@ -31,15 +30,20 @@ class WeekendHome extends StatefulWidget {
 
 class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin {
   late ScrollController _scrollController;
-  TabController? _tabController; 
+  TabController? _tabController;
   int _navIndex = 0;
   bool _isNavVisible = true;
-  
-  final double _categoryHeaderHeight = 35.0; 
+
+  final double _categoryHeaderHeight = 35.0;
 
   @override
   void initState() {
     super.initState();
+    // Make status bar transparent
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ));
     _scrollController = ScrollController();
     _scrollController.addListener(_scrollListener);
   }
@@ -54,7 +58,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
 
   @override
   void dispose() {
-    _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     _tabController?.dispose();
     super.dispose();
@@ -68,91 +71,97 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     }
   }
 
-  Widget _buildCategoryContent(int index, List<Profile> profiles) {
-    switch (index) {
-      case 0: return CategoriesPage1(profiles: profiles);
-      case 1: return CategoriesPage2(profiles: profiles);
-      case 2: return CategoriesPage3(profiles: profiles);
-      case 3: return CategoriesPage4(profiles: profiles);
-      case 4: return CategoriesPage5(profiles: profiles);
-      default: return CategoriesPage1(profiles: profiles);
+  // logic for Home content specifically
+  Widget _buildHomeContent() {
+    final homeProvider = context.watch<HomeProvider>();
+    final bool hasData = homeProvider.categories.isNotEmpty;
+
+    if (hasData) {
+      _setupTabController(homeProvider.categories.length);
     }
-  }
 
-  Widget _getCurrentPage() {
-    switch (_navIndex) {
-      case 0: // Home Page
-        final homeProvider = context.watch<HomeProvider>();
-        final bool hasData = homeProvider.categories.isNotEmpty;
+    if (homeProvider.isLoading) return _buildEliteShimmer();
 
-        if (hasData) {
-          _setupTabController(homeProvider.categories.length);
-        }
-
-        // Return Shimmer if loading
-        if (homeProvider.isLoading) return _buildEliteShimmer();
-
-        return NestedScrollView(
-          controller: _scrollController,
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverToBoxAdapter(child: _buildBrandedHeader()),
-              SliverToBoxAdapter(child: _buildSearchBar()),
-              if (hasData && _tabController != null)
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyCategoryDelegate(
-                    height: _categoryHeaderHeight,
-                    child: _buildSlimCategoryHeader(homeProvider),
-                  ),
-                ),
-            ];
-          },
-          body: (hasData && _tabController != null)
-              ? TabBarView(
-                  controller: _tabController,
-                  physics: const BouncingScrollPhysics(),
-                  children: homeProvider.categories.asMap().entries.map((entry) {
-                    return _buildCategoryContent(entry.key, entry.value.profiles);
-                  }).toList(),
-                )
-              : _buildEnhancedEmptyState(homeProvider),
-        );
-      
-      case 1: return MatchesPage();
-      case 2: return Container();
-      case 3: return Container();
-      case 4: return ProfilePage();
-      default: return Container();
-    }
+    return NestedScrollView(
+      controller: _scrollController,
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 10)),
+          SliverToBoxAdapter(child: _buildBrandedHeader()),
+          SliverToBoxAdapter(child: _buildSearchBar()),
+          if (hasData && _tabController != null)
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _StickyCategoryDelegate(
+                height: _categoryHeaderHeight,
+                child: _buildSlimCategoryHeader(homeProvider),
+              ),
+            ),
+        ];
+      },
+      body: (hasData && _tabController != null)
+          ? TabBarView(
+              controller: _tabController,
+              physics: const BouncingScrollPhysics(),
+              children: homeProvider.categories.asMap().entries.map((entry) {
+                switch (entry.key) {
+                  case 0: return CategoriesPage1(profiles: entry.value.profiles);
+                  case 1: return CategoriesPage2(profiles: entry.value.profiles);
+                  case 2: return CategoriesPage3(profiles: entry.value.profiles);
+                  case 3: return CategoriesPage4(profiles: entry.value.profiles);
+                  case 4: return CategoriesPage5(profiles: entry.value.profiles);
+                  default: return CategoriesPage1(profiles: entry.value.profiles);
+                }
+              }).toList(),
+            )
+          : _buildEnhancedEmptyState(homeProvider),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A), // Deep black background
-      extendBody: true,
-
-      body: Container(
-        child: Stack(
+    // Handling Back Button to return to Home index
+    return PopScope(
+      canPop: _navIndex == 0,
+      onPopInvoked: (didPop) {
+        if (!didPop && _navIndex != 0) {
+          setState(() => _navIndex = 0);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0A0A),
+        extendBody: true,
+        body: Stack(
           children: [
+
+            
+            // Background Gradient (Bleeds into status bar)
             Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      height: MediaQuery.of(context).size.height * 0.45,
-      child: Container(
-        decoration: BoxDecoration(
-       gradient: LinearGradient(
-            colors: [
-              const Color(0xFFFF4D67).withOpacity(0.25), Colors.transparent],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-      ),
-    ),
-            SafeArea(bottom: false, child: _getCurrentPage()),
+              top: 0, left: 0, right: 0,
+              height: MediaQuery.of(context).size.height * 0.45,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [const Color(0xFFFF4D67).withOpacity(0.25), Colors.transparent],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+
+            // Pages Layout
+            IndexedStack(
+              index: _navIndex,
+              children: [
+                _buildHomeContent(),
+                const MatchesPage(),
+                Container(color: Colors.black, child: const Center(child: Text("Chat", style: TextStyle(color: Colors.white)))),
+                Container(color: Colors.black, child: const Center(child: Text("Call", style: TextStyle(color: Colors.white)))),
+                const ProfilePage(),
+              ],
+            ),
+
             _buildAnimatedBottomNav(),
           ],
         ),
@@ -160,105 +169,44 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     );
   }
 
-  // ===================== GLASSY SHIMMER LOADING =====================
-
-  Widget _buildEliteShimmer() {
-    return Shimmer.fromColors(
-      baseColor: Colors.white.withOpacity(0.05),
-      highlightColor: Colors.white.withOpacity(0.15),
-      period: const Duration(milliseconds: 1500),
-      child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              // Header Shimmer
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(height: 25, width: 140, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
-                      const SizedBox(height: 8),
-                      Container(height: 10, width: 100, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2))),
-                    ],
-                  ),
-                  Container(height: 35, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
-                ],
-              ),
-              const SizedBox(height: 30),
-              // Search Bar Shimmer
-              Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
-              const SizedBox(height: 25),
-              // Banner Shimmer
-              Container(height: 130, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28))),
-              const SizedBox(height: 30),
-              // Category Tab Shimmer
-              Center(child: Container(height: 2, width: 200, color: Colors.white)),
-              const SizedBox(height: 20),
-              // Grid Shimmer (Profile Cards)
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                ),
-                itemCount: 4,
-                itemBuilder: (_, __) => Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ===================== NAVIGATION & UI COMPONENTS =====================
+  // ===================== NAVIGATION =====================
 
   Widget _buildAnimatedBottomNav() {
-    return AnimatedSlide(
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOutCubic,
-      offset: _isNavVisible ? Offset.zero : const Offset(0, 2),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: _buildFloatingNavBar(),
-      ),
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.fastOutSlowIn,
+      bottom: _isNavVisible ? 20 : -100, // Floating effect
+      left: 20,
+      right: 20,
+      child: _buildFloatingNavBar(),
     );
   }
 
   Widget _buildFloatingNavBar() {
     return Container(
-      height: 85,
+      height: 75,
       decoration: BoxDecoration(
-        color: const Color(0xFF121212).withOpacity(0.9),
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 25, offset: const Offset(0, 10))],
+        color: const Color(0xFF161616).withOpacity(0.85),
+        borderRadius: BorderRadius.circular(35),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
       ),
       child: ClipRRect(
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        borderRadius: BorderRadius.circular(35),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(Iconsax.home_1, 0, "Home"),
-                            _navItem(Iconsax.lovely, 1, "Match"),
+              _navItem(Iconsax.lovely, 1, "Match"),
               _navItem(Iconsax.message_notif, 2, "Chat"),
-
               _navItem(Iconsax.call, 3, "Call"),
               _navItem(Iconsax.user, 4, "Profile"),
             ],
@@ -272,59 +220,64 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     bool isSelected = _navIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _navIndex = index),
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? AppColors.neonGold : Colors.white54, size: isSelected ? 26 : 22),
+            Icon(
+              icon,
+              color: isSelected ? AppColors.neonGold : Colors.white54,
+              size: isSelected ? 24 : 22,
+            ),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: isSelected ? AppColors.neonGold : Colors.white54, fontSize: 8, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500)),
+            if (isSelected)
+              Container(
+                height: 4, width: 4,
+                decoration: const BoxDecoration(color: AppColors.neonGold, shape: BoxShape.circle),
+              )
+            else
+              Text(label, style: const TextStyle(color: Colors.white54, fontSize: 8)),
           ],
         ),
       ),
     );
   }
 
+  // ===================== UI COMPONENTS =====================
+
   Widget _buildBrandedHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 15, 15, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-                  Text(
-                  "Weekend",
-                  style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
-                ),
-                SizedBox(height: 4,),
-              //  Text("WEEKEND", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 3)),
-              // ShaderMask(
-              //   // shaderCallback: (bounds) => const LinearGradient(
-              //   //   colors: [Colors.white, AppColors.neonGold, Color(0xFFFFD700)],
-              //   // ).createShader(bounds),
-              //   child: const Text("WEEKEND", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 3)),
-              // ),
+              const Text("Weekend", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1)),
               Text("ELITE DATING EXPERIENCE", style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
             ],
           ),
-          Spacer(),
+          const Spacer(),
           _buildBoostButton(),
-          SizedBox(width: 6,),
-          Container(
-      padding: const EdgeInsets.all(8),
+          const SizedBox(width: 8),
+          _iconCircle(Iconsax.notification),
+        ],
+      ),
+    );
+  }
+
+  Widget _iconCircle(IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
-      child: Icon(Iconsax.notification, color: Colors.white, size: 16),
-    ),
-        ],
-      ),
+      child: Icon(icon, color: Colors.white, size: 18),
     );
   }
 
@@ -332,13 +285,14 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     return GestureDetector(
       onLongPress: () async => await AuthService().logout(),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.neonGold, Color(0xFFFFB300), AppColors.richOrange],
-            begin: Alignment.topLeft, end: Alignment.bottomRight
+              colors: [AppColors.neonGold, Color(0xFFFFB300), AppColors.richOrange],
+              begin: Alignment.topLeft, end: Alignment.bottomRight
           ),
           borderRadius: BorderRadius.circular(30),
+          boxShadow: [BoxShadow(color: AppColors.neonGold.withOpacity(0.3), blurRadius: 10)]
         ),
         child: const Row(
           children: [
@@ -353,12 +307,12 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(15, 20, 15, 10),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          // color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(25),
           border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: Row(
@@ -379,47 +333,54 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     final category = provider.categories[idx < provider.categories.length ? idx : 0];
 
     return Container(
-      // color: AppColors.deepBlack.withOpacity(0.8),
+      color: Colors.transparent,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(width: 40),
-          Expanded(child: Divider(color: Colors.white.withOpacity(0.3), thickness: 0.8)),
+          Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              category.goalTitle.toUpperCase(),
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 1),
-            ),
+            child: Text(category.goalTitle.toUpperCase(), style: const TextStyle(color: Colors.white38, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 2)),
           ),
-          Expanded(child: Divider(color: Colors.white.withOpacity(0.3), thickness: 0.8)),
+          Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
           const SizedBox(width: 40),
         ],
       ),
     );
   }
 
-  Widget _buildEnhancedEmptyState(HomeProvider provider) {
-    return Center(
-      child: Text("No profiles found", style: TextStyle(color: Colors.white.withOpacity(0.5))),
+  Widget _buildEliteShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.white.withOpacity(0.05),
+      highlightColor: Colors.white.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            const SizedBox(height: 60),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Container(height: 30, width: 150, color: Colors.white),
+              Container(height: 40, width: 40, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+            ]),
+            const SizedBox(height: 30),
+            Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25))),
+          ],
+        ),
+      ),
     );
   }
-}
 
-// ===================== STICKY DELEGATE =====================
+  Widget _buildEnhancedEmptyState(HomeProvider provider) {
+    return const Center(child: Text("Finding your matches...", style: TextStyle(color: Colors.white24)));
+  }
+}
 
 class _StickyCategoryDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double height;
   _StickyCategoryDelegate({required this.child, required this.height});
-
   @override double get minExtent => height;
   @override double get maxExtent => height;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return SizedBox.expand(child: child);
-  }
-
+  @override Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => SizedBox.expand(child: child);
   @override bool shouldRebuild(_StickyCategoryDelegate oldDelegate) => true;
 }
