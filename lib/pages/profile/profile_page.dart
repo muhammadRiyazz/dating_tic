@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:dating/main.dart';
 import 'package:dating/pages/first_page.dart';
-import 'package:dating/pages/profile/Edit_Profile_Page.dart';
+import 'package:dating/pages/profile/edit_profile.dart/Edit_Profile_Page.dart';
 import 'package:dating/pages/profile/my_profile.dart';
 import 'package:dating/pages/profile/profile_image_shimmer.dart';
 import 'package:dating/providers/my_profile_provider.dart';

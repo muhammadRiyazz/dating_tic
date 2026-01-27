@@ -194,6 +194,33 @@ class Profile {
       photo: photo ?? this.photo,
     );
   }
+  factory Profile.empty() {
+  return Profile(
+    userId: 0,
+    userName: '',
+    phno: null,
+    countryCode: null,
+    dateOfBirth: null,
+    height: null,
+    smokingHabit: null,
+    drinkingHabit: null,
+    job: null,
+    gender: Gender(id: 0, name: ''),
+    education: Education(id: 0, name: ''),
+    relationshipGoal: null,
+    interests: [],
+    latitude: null,
+    longitude: null,
+    state: null,
+    country: null,
+    address: null,
+    bio: null,
+    photos: [],
+    city: null,
+    photo: '',
+  );
+}
+
 }
 
 class Gender {
@@ -223,6 +250,7 @@ class Education {
   factory Education.fromJson(Map<String, dynamic> json) {
     return Education(id: json['id'], name: json['name']);
   }
+
 
   Education copyWith({int? id, String? name}) {
     return Education(
@@ -321,4 +349,5 @@ class ProfileResponse {
       data: data ?? this.data,
     );
   }
+  
 }

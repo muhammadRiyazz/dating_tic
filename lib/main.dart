@@ -9,6 +9,7 @@ import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/providers/my_profile_provider.dart';
 import 'package:dating/providers/phone_registration_provider.dart';
 import 'package:dating/providers/profile_provider.dart';
+import 'package:dating/providers/profile_update.dart';
 import 'package:dating/providers/registration_data_provider.dart' ;
 import 'package:dating/services/auth_service.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -34,6 +35,8 @@ void main() async {
   //   FirebaseNotificationService.init();
   // });
 
+
+
   // Background handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -48,6 +51,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LikersProvider()),
         ChangeNotifierProvider(create: (_) => MatchesProvider()),
         ChangeNotifierProvider(create: (_) => InteractionProvider()),
+        ChangeNotifierProvider(create: (_) => UpdateProfileProvider()),
+
+        
       ],
       child: const MyApp(),
     ),

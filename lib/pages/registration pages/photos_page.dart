@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/home/home_screen.dart';
@@ -12,10 +12,10 @@ import 'package:dating/services/registration_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
-import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 // Import notification service
 import 'package:dating/services/notification_service.dart';
@@ -40,9 +40,7 @@ class PhotosPage extends StatefulWidget {
 
 class _PhotosPageState extends State<PhotosPage> {
   final ImagePicker _picker = ImagePicker();
-  List<File> _selectedImages = [];
-  List<String> _base64Images = [];
-  List<String> _originalImagePaths = [];
+  List<ProfilePhoto> _profilePhotos = [];
   bool _isLoading = false;
   bool _isUploading = false;
   bool _isVerifying = false;
@@ -51,15 +49,27 @@ class _PhotosPageState extends State<PhotosPage> {
   String? _fcmToken;
   
   final int _minPhotos = 1;
-  final int _maxPhotos = 4;
-  
-  // Image processing configuration
-  static const String _targetFormat = 'jpeg';
-  static const int _maxFileSize = 2 * 1024 * 1024;
-  static const int _targetWidth = 1080;
-  static const int _targetHeight = 1440;
-  static const int _jpegQuality = 85;
-  final double _targetAspectRatio = 3.0 / 4.0;
+  final int _maxPhotos = 6;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialPhotos();
+  }
+
+  void _loadInitialPhotos() {
+    // If there are any existing photos in userdata, load them
+    if (widget.userdata.photos != null && widget.userdata.photos!.isNotEmpty) {
+      for (int i = 0; i < widget.userdata.photos!.length; i++) {
+        _profilePhotos.add(ProfilePhoto(
+          id: i,
+          base64: widget.userdata.photos![i],
+          isLocal: false,
+          isPrimary: i == 0,
+        ));
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -68,8 +78,6 @@ class _PhotosPageState extends State<PhotosPage> {
   }
 
   // ====================== NOTIFICATION HANDLING ======================
-
-  // Initialize notifications and get token
   Future<String?> _initializeNotificationsAndGetToken() async {
     setState(() {
       _isProcessingNotifications = true;
@@ -98,8 +106,6 @@ class _PhotosPageState extends State<PhotosPage> {
       if (token != null && token.isNotEmpty) {
         log("✅ FCM Token obtained: $token");
         _fcmToken = token;
-        
-     
         
         return token;
       } else {
@@ -155,7 +161,6 @@ class _PhotosPageState extends State<PhotosPage> {
     }
   }
 
-  // Show guide for enabling notifications
   Future<void> _showNotificationEnablingGuide() async {
     return await showDialog(
       context: context,
@@ -466,9 +471,163 @@ class _PhotosPageState extends State<PhotosPage> {
   }
 
   // ====================== IMAGE HANDLING METHODS ======================
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+            decoration: BoxDecoration(
+              color: AppColors.deepBlack.withOpacity(0.9),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Add Photo",
+                          style: TextStyle(
+                            color: AppColors.neonGold,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5
+                          )
+                        ),
+                        const SizedBox(height: 4),
+                        Text("Select a source",
+                          style: TextStyle(color: Colors.white38, fontSize: 13)),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        child: Icon(Iconsax.close_circle, color: AppColors.neonGold, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    _buildGlassySourceCard(
+                      icon: Iconsax.camera,
+                      label: "Camera",
+                      color: AppColors.neonGold,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickImage(ImageSource.camera);
+                      },
+                    ),
+                    const SizedBox(width: 16),
+                    _buildGlassySourceCard(
+                      icon: Iconsax.gallery,
+                      label: "Gallery",
+                      color: AppColors.neonGold,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickImage(ImageSource.gallery);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.neonGold.withOpacity(0.1),
+                          shape: BoxShape.circle
+                        ),
+                        child: Icon(Iconsax.magic_star, color: AppColors.neonGold, size: 20),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Pro Tip",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14
+                              )
+                            ),
+                            Text("Use clear, well-lit photos showing your face for better matches.",
+                              style: TextStyle(color: Colors.white54, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassySourceCard({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          decoration: BoxDecoration(
+            color: AppColors.cardBlack,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 32),
+              const SizedBox(height: 12),
+              Text(label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15
+                )
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _pickImage(ImageSource source) async {
-    if (_selectedImages.length >= _maxPhotos) return;
+    if (_profilePhotos.length >= _maxPhotos) {
+      _showErrorSnackbar('Maximum $_maxPhotos photos allowed');
+      return;
+    }
     
     try {
       setState(() {
@@ -476,37 +635,14 @@ class _PhotosPageState extends State<PhotosPage> {
         _uploadError = '';
       });
       
-      final XFile? image = await _picker.pickImage(
+      final XFile? pickedFile = await _picker.pickImage(
         source: source,
-        imageQuality: 90,
+        imageQuality: 85,
         preferredCameraDevice: CameraDevice.front,
       );
       
-      if (image != null) {
-        _originalImagePaths.add(image.path);
-        
-        File? croppedFile = await _showCustomCropper(File(image.path));
-        if (croppedFile != null) {
-          File? processedFile = await _processImage(croppedFile);
-          
-          if (processedFile != null) {
-            bool isHuman = await _verifyHumanImage(processedFile);
-            
-            if (isHuman) {
-              String base64Image = await _fileToBase64(processedFile);
-              
-              setState(() {
-                _selectedImages.add(processedFile);
-                _base64Images.add(base64Image);
-              });
-              _showSuccessSnackbar('Photo added successfully!');
-            } else {
-              _showErrorSnackbar('Please upload a clear photo showing your face');
-            }
-          } else {
-            _showErrorSnackbar('Failed to process image. Please try again.');
-          }
-        }
+      if (pickedFile != null) {
+        await _cropImage(File(pickedFile.path));
       }
     } catch (e) {
       log('Error picking image: $e');
@@ -518,375 +654,282 @@ class _PhotosPageState extends State<PhotosPage> {
     }
   }
 
-  Future<String> _fileToBase64(File file) async {
+  Future<void> _cropImage(File imageFile) async {
     try {
-      List<int> imageBytes = await file.readAsBytes();
-      String base64Image = base64Encode(imageBytes);
-      return base64Image;
-    } catch (e) {
-      log('Error converting file to base64: $e');
-      rethrow;
-    }
-  }
-
-  Future<File?> _processImage(File originalFile) async {
-    try {
-      final bytes = await originalFile.readAsBytes();
-      final originalImage = img.decodeImage(bytes);
-      if (originalImage == null) throw Exception('Failed to decode image');
-      
-      final newDimensions = _calculateDimensions(
-        originalImage.width,
-        originalImage.height,
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: imageFile.path,
+        aspectRatio: const CropAspectRatio(ratioX: 3, ratioY: 4),
+        compressQuality: 90,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Your Photo',
+            toolbarColor: AppColors.deepBlack,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: AppColors.neonGold,
+            backgroundColor: AppColors.deepBlack,
+            statusBarColor: AppColors.deepBlack,
+            cropFrameColor: AppColors.neonGold,
+            cropGridColor: Colors.white.withOpacity(0.3),
+            dimmedLayerColor: Colors.black.withOpacity(0.85),
+            initAspectRatio: CropAspectRatioPreset.ratio3x2,
+            lockAspectRatio: true,
+            hideBottomControls: false,
+            showCropGrid: true,
+          ),
+          IOSUiSettings(
+            title: 'Crop Photo',
+            aspectRatioLockEnabled: true,
+            resetButtonHidden: false,
+            doneButtonTitle: 'USE',
+            cancelButtonTitle: 'CANCEL',
+          ),
+        ],
       );
-      
-      final resizedImage = img.copyResize(
-        originalImage,
-        width: newDimensions.width,
-        height: newDimensions.height,
-        interpolation: img.Interpolation.linear,
-      );
-      
-      final jpegBytes = img.encodeJpg(resizedImage, quality: _jpegQuality);
-      Uint8List compressedBytes = await _compressToTargetSize(jpegBytes);
-      
-      final tempDir = Directory.systemTemp;
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final processedFile = File('${tempDir.path}/processed_$timestamp.$_targetFormat');
-      await processedFile.writeAsBytes(compressedBytes);
-      
-      return processedFile;
-    } catch (e) {
-      log('Error processing image: $e');
-      return null;
-    }
-  }
 
-  Future<Uint8List> _compressToTargetSize(Uint8List bytes) async {
-    if (bytes.length <= _maxFileSize) return bytes;
-    
-    int currentQuality = _jpegQuality;
-    Uint8List compressedBytes = bytes;
-    
-    while (compressedBytes.length > _maxFileSize && currentQuality > 10) {
-      currentQuality -= 5;
-      final image = img.decodeJpg(compressedBytes);
-      if (image == null) break;
-      compressedBytes = img.encodeJpg(image, quality: currentQuality);
-    }
-    
-    if (compressedBytes.length > _maxFileSize) {
-      final image = img.decodeJpg(compressedBytes);
-      if (image != null) {
-        final newWidth = (image.width * 0.9).toInt();
-        final newHeight = (image.height * 0.9).toInt();
-        
-        final resizedImage = img.copyResize(
-          image,
-          width: newWidth,
-          height: newHeight,
-        );
-        
-        compressedBytes = img.encodeJpg(resizedImage, quality: math.max(currentQuality, 30));
+      if (croppedFile != null && mounted) {
+        _addNewPhoto(File(croppedFile.path));
       }
-    }
-    
-    return compressedBytes;
-  }
-
-  Dimensions _calculateDimensions(int originalWidth, int originalHeight) {
-    double aspectRatio = originalWidth / originalHeight;
-    
-    if (aspectRatio > _targetAspectRatio) {
-      return Dimensions(
-        width: (_targetHeight * _targetAspectRatio).toInt(),
-        height: _targetHeight,
-      );
-    } else {
-      return Dimensions(
-        width: _targetWidth,
-        height: (_targetWidth / _targetAspectRatio).toInt(),
-      );
-    }
-  }
-
-  Future<File?> _showCustomCropper(File imageFile) async {
-    return await showDialog<File>(
-      context: context,
-      builder: (context) => AdvancedImageCropper(
-        imageFile: imageFile,
-        aspectRatio: _targetAspectRatio,
-      ),
-    );
-  }
-
-  Future<bool> _verifyHumanImage(File imageFile) async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      final stats = await imageFile.stat();
-      if (stats.size > _maxFileSize * 1.1) return false;
-      return true;
     } catch (e) {
-      log('Verification error: $e');
-      return false;
+      log('Error cropping image: $e');
+      _showErrorSnackbar('Failed to crop image');
     }
   }
 
-  void _removeImage(int index) {
+  void _addNewPhoto(File imageFile) {
+    // Convert image to base64
+    final bytes = imageFile.readAsBytesSync();
+    final base64Image = base64Encode(bytes);
+    
     setState(() {
-      _selectedImages.removeAt(index);
-      _base64Images.removeAt(index);
-      _originalImagePaths.removeAt(index);
-      _uploadError = '';
+      _profilePhotos.add(ProfilePhoto(
+        id: DateTime.now().millisecondsSinceEpoch,
+        base64: base64Image,
+        isLocal: true,
+        isPrimary: _profilePhotos.isEmpty,
+      ));
     });
+    
+    _showSuccessSnackbar('Photo added successfully!');
   }
 
-  void _showImageSourceDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppColors.deepBlack,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.neonGold.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  'Add Photo',
-                  style: TextStyle(
-                    fontSize: 22,
-                    color: AppColors.neonGold,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Images will be automatically converted to JPEG and optimized',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade400,
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              _buildSourceOption(
-                context,
-                icon: Iconsax.camera,
-                title: 'Take Photo Now',
-                subtitle: 'Use camera to take a new photo',
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              
-              _buildSourceOption(
-                context,
-                icon: Iconsax.gallery,
-                title: 'Choose from Gallery',
-                subtitle: 'Select from your photos',
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-              
-              const SizedBox(height: 20),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: Colors.grey.shade800,
-                      width: 1,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _removePhoto(int index) {
+    if (index < _profilePhotos.length) {
+      setState(() {
+        final wasPrimary = _profilePhotos[index].isPrimary;
+        _profilePhotos.removeAt(index);
+        
+        if (wasPrimary && _profilePhotos.isNotEmpty) {
+          _profilePhotos[0] = _profilePhotos[0].copyWith(isPrimary: true);
+        }
+        _uploadError = '';
+      });
+    }
   }
 
-  Widget _buildSourceOption(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.cardBlack,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: AppColors.neonGold.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: AppColors.neonGold,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Iconsax.arrow_right_3,
-                  color: AppColors.neonGold.withOpacity(0.5),
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  void _setPrimaryPhoto(int index) {
+    if (index < _profilePhotos.length) {
+      setState(() {
+        for (int i = 0; i < _profilePhotos.length; i++) {
+          _profilePhotos[i] = _profilePhotos[i].copyWith(
+            isPrimary: i == index,
+          );
+        }
+      });
+    }
   }
 
-  void _reorderImage(int oldIndex, int newIndex) {
+  void _reorderPhoto(int oldIndex, int newIndex) {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final File image = _selectedImages.removeAt(oldIndex);
-    final String base64Image = _base64Images.removeAt(oldIndex);
-    final String path = _originalImagePaths.removeAt(oldIndex);
     
+    final photo = _profilePhotos.removeAt(oldIndex);
     setState(() {
-      _selectedImages.insert(newIndex, image);
-      _base64Images.insert(newIndex, base64Image);
-      _originalImagePaths.insert(newIndex, path);
+      _profilePhotos.insert(newIndex, photo);
       _uploadError = '';
     });
   }
 
   void _showFullScreenImage(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: Colors.black,
-          child: Stack(
-            children: [
-              PhotoView(
-                imageProvider: FileImage(_selectedImages[index]),
-                backgroundDecoration: const BoxDecoration(color: Colors.black),
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 2,
-              ),
-              Positioned(
-                top: 50,
-                right: 20,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
+    if (_profilePhotos[index].base64 != null) {
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.black,
+            child: Stack(
+              children: [
+                PhotoView(
+                  imageProvider: MemoryImage(base64Decode(_profilePhotos[index].base64!)),
+                  backgroundDecoration: const BoxDecoration(color: Colors.black),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2,
+                ),
+                Positioned(
+                  top: 50,
+                  right: 20,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
-                    ),
-                    child: Icon(
-                      Iconsax.close_circle,
-                      color: Colors.white,
-                      size: 24,
+                      child: Icon(
+                        Iconsax.close_circle,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
+  }
+
+  // ====================== REGISTRATION FLOW ======================
+  void _uploadAndContinue() async {
+    log('_uploadAndContinue');
+    log(jsonEncode(widget.userdata.interests).toString());
+
+    // Validation
+    if (_profilePhotos.length < _minPhotos) {
+      _showErrorSnackbar('Please add at least $_minPhotos photos');
+      return;
+    }
+    
+    if (widget.userdata.userRegId == null) {
+      _showErrorSnackbar('User ID not found. Please restart registration.');
+      return;
+    }
+    
+    // Start the registration process
+    setState(() {
+      _isUploading = true;
+      _uploadError = '';
+    });
+    
+    try {
+      // Extract base64 images from profile photos
+      final List<String> base64Images = [];
+      for (final photo in _profilePhotos) {
+        if (photo.base64 != null && photo.base64!.isNotEmpty) {
+          base64Images.add(photo.base64!);
+        }
+      }
+      
+      if (base64Images.isEmpty) {
+        throw Exception('No valid photos to upload');
+      }
+      
+      // Validate base64 strings
+      for (int i = 0; i < base64Images.length; i++) {
+        try {
+          base64Decode(base64Images[i]);
+        } catch (e) {
+          throw Exception('Photo ${i + 1} has invalid base64 encoding');
+        }
+      }
+      
+      // Prepare user data
+      String mainPhotoUrl = base64Images.isNotEmpty ? base64Images[0] : '';
+      
+      final UserRegistrationModel data = UserRegistrationModel(
+        userName: widget.userdata.userName,
+        userRegId: widget.userdata.userRegId,
+        dateOfBirth: widget.userdata.dateOfBirth,
+        gender: widget.userdata.gender,
+        height: widget.userdata.height,
+        smokingHabit: widget.userdata.smokingHabit,
+        drinkingHabit: widget.userdata.drinkingHabit,
+        relationshipGoal: widget.userdata.relationshipGoal,
+        job: widget.userdata.job,
+        education: widget.userdata.education,
+        latitude: widget.userdata.latitude,
+        longitude: widget.userdata.longitude,
+        city: widget.userdata.city,
+        state: widget.userdata.state,
+        country: widget.userdata.country,
+        address: widget.userdata.address,
+        bio: widget.userdata.bio,
+        interests: widget.userdata.interests,
+        photos: base64Images,
+        mainPhotoUrl: mainPhotoUrl,
+      );
+      
+      // Handle notifications
+      _fcmToken = await _initializeNotificationsAndGetToken();
+      log('Final FCM Token for registration: $_fcmToken');
+      
+      // Call API with notification token
+      final apiResult = await RegistrationService().updateProfileToAPI(data, _fcmToken ?? '');
+      
+      if (apiResult['success'] == true) {
+        // Login user
+        final authService = AuthService();
+        final responseData = apiResult['data'];
+        final String userName = responseData?['data']?['user_name'] ?? widget.userdata.userName ?? '';
+        final String userPhone = responseData?['data']?['phone'] ?? '';
+        
+        await authService.login(
+          userId: widget.userdata.userRegId.toString(),
+          token: responseData?['data']?['token'] ?? '',
+          phone: userPhone,
+          name: userName,
+          photo: mainPhotoUrl,
+        );
+        
+        _showSuccessSnackbar('🎉 Registration Complete! Welcome to Weekend!');
+        
+        // Navigate to home
+        await Future.delayed(const Duration(milliseconds: 1500));
+        
+        if (mounted) {
+          context.read<MyProfileProvider>().fetchUserProfile(widget.userdata.userRegId.toString());
+          
+          // Navigate to home screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const WeekendHome(),
+            ),
+            (route) => false,
+          );
+        }
+      } else {
+        setState(() {
+          _uploadError = apiResult['message'] ?? 'Failed to update profile';
+        });
+        _showErrorSnackbar(apiResult['message'] ?? 'Failed to update profile. Please try again.');
+      }
+      
+    } catch (e) {
+      log('Registration error: $e');
+      setState(() {
+        _uploadError = e.toString();
+      });
+      _showErrorSnackbar('An error occurred: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
   }
 
   void _showSuccessSnackbar(String message) {
@@ -937,169 +980,7 @@ class _PhotosPageState extends State<PhotosPage> {
     );
   }
 
-  // ====================== REGISTRATION FLOW ======================
-
-  void _uploadAndContinue() async {
-
-
-
-
-
-log('_uploadAndContinue');
-log(jsonEncode(widget.userdata.interests).toString() );
-
-    // // Validation
-    if (_selectedImages.length < _minPhotos) {
-      _showErrorSnackbar('Please add at least $_minPhotos photos');
-      return;
-    }
-    
-    if (widget.userdata.userRegId == null) {
-      // _showErrorSnackbar('User ID not found. Please restart registration.');
-      return;
-    }
-    
-    // Start the registration process
-    setState(() {
-      _isUploading = true;
-      _uploadError = '';
-    });
-    
-    try {
-      // STEP 1: Validate images
-      for (int i = 0; i < _selectedImages.length; i++) {
-        final file = _selectedImages[i];
-        final size = await file.length();
-        if (size > _maxFileSize * 1.1) {
-          throw Exception('Image $i is too large: ${size / 1024}KB');
-        }
-        
-        final bytes = await file.readAsBytes();
-        if (bytes.length < 2 || (bytes[0] != 0xFF || bytes[1] != 0xD8)) {
-          throw Exception('Image $i is not in JPEG format');
-        }
-      }
-      
-      for (int i = 0; i < _base64Images.length; i++) {
-        if (_base64Images[i].isEmpty) {
-          throw Exception('Image $i base64 string is empty');
-        }
-        
-        try {
-          base64Decode(_base64Images[i]);
-        } catch (e) {
-          throw Exception('Image $i has invalid base64 encoding');
-        }
-      }
-      
-      // STEP 2: Prepare user data
-      String mainPhotoUrl = _base64Images.isNotEmpty ? _base64Images[0] : '';
-      
-      final UserRegistrationModel data = UserRegistrationModel(
-        userName: widget.userdata.userName,
-        userRegId: widget.userdata.userRegId,
-        dateOfBirth: widget.userdata.dateOfBirth,
-        gender: widget.userdata.gender,
-        height: widget.userdata.height,
-        smokingHabit: widget.userdata.smokingHabit,
-        drinkingHabit: widget.userdata.drinkingHabit,
-        relationshipGoal: widget.userdata.relationshipGoal,
-        job: widget.userdata.job,
-        education: widget.userdata.education,
-        latitude: widget.userdata.latitude,
-        longitude: widget.userdata.longitude,
-        city: widget.userdata.city,
-        state: widget.userdata.state,
-        country: widget.userdata.country,
-        address: widget.userdata.address,
-        bio: widget.userdata.bio,
-        interests: widget.userdata.interests,
-        photos: _base64Images,
-        mainPhotoUrl: mainPhotoUrl,
-      );
-      
-      // STEP 3: Handle notifications (call init and get token)
-      _fcmToken = await _initializeNotificationsAndGetToken();
-      log('Final FCM Token for registration: $_fcmToken');
-      
-      // STEP 4: Call API with notification token
-      final apiResult = await RegistrationService(). updateProfileToAPI(data,_fcmToken??'');
-      
-      if (apiResult['success'] == true) {
-        // STEP 5: Login user
-        final authService = AuthService();
-        final responseData = apiResult['data'];
-        final String userName = responseData?['data']?['user_name'] ?? widget.userdata.userName ?? '';
-        final String userPhone = responseData?['data']?['phone'] ?? '';
-        
-        await authService.login(
-          userId: widget.userdata.userRegId.toString(),
-          token: responseData?['data']?['token'] ?? '',
-          phone: userPhone,
-          name: userName,
-          photo: mainPhotoUrl,
-
-
-
-
-
-          
-        );
-        
-        _showSuccessSnackbar('🎉 Registration Complete! Welcome to Weekend!');
-        
-        // STEP 6: Navigate to home
-        await Future.delayed(const Duration(milliseconds: 1500));
-        
-        if (mounted) {
-                  context.read<MyProfileProvider>().fetchUserProfile( widget.userdata.userRegId.toString());
-
-          fetchprofiles(context);
-          log('Done');
-          // Navigator.pushAndRemoveUntil(
-          //   context,
-          //   PageRouteBuilder(
-          //     pageBuilder: (context, animation, secondaryAnimation) => const WeekendHome(),
-          //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          //       const begin = Offset(1.0, 0.0);
-          //       const end = Offset.zero;
-          //       const curve = Curves.easeInOut;
-          //       var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          //       return SlideTransition(
-          //         position: animation.drive(tween),
-          //         child: child,
-          //       );
-          //     },
-          //   ),
-          //   (route) => false,
-          // );
-        }
-      } else {
-        setState(() {
-          _uploadError = apiResult['message'] ?? 'Failed to update profile';
-        });
-        _showErrorSnackbar(apiResult['message'] ?? 'Failed to update profile. Please try again.');
-      }
-      
-    } catch (e) {
-      log('Registration error: $e');
-      setState(() {
-        _uploadError = e.toString();
-      });
-      // _showErrorSnackbar('An error occurred: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
-    }
-  }
-
-
- 
   // ====================== UI BUILD METHOD ======================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1108,7 +989,7 @@ log(jsonEncode(widget.userdata.interests).toString() );
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.neonGold.withOpacity(0.2),
+              AppColors.neonGold.withOpacity(0.15),
               Colors.transparent,
               Colors.transparent,
             ],
@@ -1125,21 +1006,20 @@ log(jsonEncode(widget.userdata.interests).toString() );
                 // Header with back button
                 Container(
                   padding: const EdgeInsets.only(top: 20, bottom: 20),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.neonGold.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
                         Iconsax.arrow_left_2,
                         color: AppColors.neonGold,
-                        size: 24,
+                        size: 20,
                       ),
-                      padding: EdgeInsets.zero,
                     ),
                   ),
                 ),
@@ -1161,45 +1041,50 @@ log(jsonEncode(widget.userdata.interests).toString() );
                       child: Text(
                         'Profile Photos',
                         style: TextStyle(
-                          fontSize: 26,
+                          fontSize: 28,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
-                            text: 'Add clear photos showing your face',
+                            text: 'Add up to 6 photos. First photo is your primary profile picture.',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               color: Colors.grey.shade400,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_profilePhotos.length}/$_maxPhotos photos added',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.neonGold,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
-
+                
                 // Progress indicator
-                Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    children: [
-                      LinearProgressIndicator(
-                        value: _selectedImages.length / _maxPhotos,
-                        backgroundColor: AppColors.cardBlack,
-                        color: AppColors.neonGold,
-                        minHeight: 6,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ],
+                if (_profilePhotos.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 16, bottom: 20),
+                    child: LinearProgressIndicator(
+                      value: _profilePhotos.length / _maxPhotos,
+                      backgroundColor: AppColors.cardBlack,
+                      color: AppColors.neonGold,
+                      minHeight: 4,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
                 
                 // Error message
                 if (_uploadError.isNotEmpty)
@@ -1230,8 +1115,6 @@ log(jsonEncode(widget.userdata.interests).toString() );
                     ),
                   ),
                 
-                // Notification processing indicator
-               
                 // Image verification indicator
                 if (_isVerifying)
                   Container(
@@ -1273,25 +1156,9 @@ log(jsonEncode(widget.userdata.interests).toString() );
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Column(
-                      children: [
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.75,
-                          ),
-                          itemCount: _maxPhotos,
-                          itemBuilder: (context, index) {
-                            if (index < _selectedImages.length) {
-                              return _buildImageContainer(index);
-                            } else {
-                              return _buildAddPhotoButton();
-                            }
-                          },
-                        ),
+                      children: [                        const SizedBox(height: 22),
+
+                        _buildPhotoEditorGrid(),
                         const SizedBox(height: 32),
                       ],
                     ),
@@ -1305,14 +1172,14 @@ log(jsonEncode(widget.userdata.interests).toString() );
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _selectedImages.length >= _minPhotos && 
+                      onPressed: _profilePhotos.length >= _minPhotos && 
                                 !_isUploading && 
                                 !_isVerifying &&
                                 !_isProcessingNotifications
                           ? _uploadAndContinue
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedImages.length >= _minPhotos
+                        backgroundColor: _profilePhotos.length >= _minPhotos
                             ? AppColors.neonGold
                             : AppColors.neonGold.withOpacity(0.3),
                         foregroundColor: Colors.black,
@@ -1333,16 +1200,24 @@ log(jsonEncode(widget.userdata.interests).toString() );
                                     color: Colors.black,
                                   ),
                                 ),
-                               
+                                const SizedBox(width: 12),
+                                Text(
+                                  _isUploading ? 'Registering...' : 'Setting up notifications...',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ],
                             )
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  _selectedImages.length < _minPhotos
-                                      ? 'ADD ${_minPhotos - _selectedImages.length} MORE PHOTOS'
-                                      : 'REGISTER',
+                                  _profilePhotos.length < _minPhotos
+                                      ? 'ADD ${_minPhotos - _profilePhotos.length} MORE PHOTOS'
+                                      : 'COMPLETE REGISTRATION',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w900,
@@ -1362,9 +1237,36 @@ log(jsonEncode(widget.userdata.interests).toString() );
     );
   }
 
-  Widget _buildImageContainer(int index) {
-    final isFirstPhoto = index == 0;
-    
+  Widget _buildPhotoEditorGrid() {
+    return Column(
+      children: [
+        // Add photo button (if space available)
+      
+        // Photos Grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: _maxPhotos,
+          itemBuilder: (context, index) {
+            if (index < _profilePhotos.length) {
+              return _buildPhotoCard(index, _profilePhotos[index]);
+            } else {
+              return _buildEmptyPhotoCard(index);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildPhotoCard(int index, ProfilePhoto photo) {
     return Draggable<int>(
       data: index,
       feedback: Material(
@@ -1372,14 +1274,16 @@ log(jsonEncode(widget.userdata.interests).toString() );
         child: Transform.scale(
           scale: 1.05,
           child: Container(
-            width: MediaQuery.of(context).size.width / 2 - 32,
-            height: (MediaQuery.of(context).size.width / 2 - 32) / 0.75,
+            width: (MediaQuery.of(context).size.width - 72) / 3,
+            height: ((MediaQuery.of(context).size.width - 72) / 3) / 0.75,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: FileImage(_selectedImages[index]),
-                fit: BoxFit.cover,
-              ),
+              image: photo.base64 != null
+                  ? DecorationImage(
+                      image: MemoryImage(base64Decode(photo.base64!)),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.5),
@@ -1407,29 +1311,27 @@ log(jsonEncode(widget.userdata.interests).toString() );
       ),
       child: DragTarget<int>(
         onAccept: (draggedIndex) {
-          _reorderImage(draggedIndex, index);
+          _reorderPhoto(draggedIndex, index);
         },
         builder: (context, candidateData, rejectedData) {
           return GestureDetector(
             onTap: () => _showFullScreenImage(index),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                image: DecorationImage(
-                  image: FileImage(_selectedImages[index]),
-                  fit: BoxFit.cover,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    spreadRadius: 2,
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: photo.base64 != null
+                        ? DecorationImage(
+                            image: MemoryImage(base64Decode(photo.base64!)),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    color: photo.base64 == null
+                        ? AppColors.cardBlack
+                        : null,
                   ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Container(
+                  child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       gradient: LinearGradient(
@@ -1442,89 +1344,121 @@ log(jsonEncode(widget.userdata.interests).toString() );
                       ),
                     ),
                   ),
-                  
-                  if (isFirstPhoto)
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.neonGold,
-                              AppColors.neonGold.withOpacity(0.8),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                            ),
+                ),
+                
+                if (photo.isPrimary)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.neonGold,
+                            AppColors.neonGold.withOpacity(0.8),
                           ],
                         ),
-                        child: Text(
-                          'MAIN',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
                           ),
-                        ),
-                      ),
-                    ),
-                  
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: GestureDetector(
-                      onTap: () => _removeImage(index),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          Iconsax.close_circle,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  Positioned(
-                    bottom: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(8),
+                        ],
                       ),
                       child: Text(
-                        '${index + 1}',
+                        'MAIN',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => _removePhoto(index),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        Iconsax.close_circle,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Set primary button overlay
+                if (!photo.isPrimary)
+                  Positioned.fill(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _setPrimaryPhoto(index),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.black.withOpacity(0.2),
+                          ),
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Iconsax.star_1,
+                                color: AppColors.neonGold,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           );
         },
@@ -1532,37 +1466,40 @@ log(jsonEncode(widget.userdata.interests).toString() );
     );
   }
 
-  Widget _buildAddPhotoButton() {
+  Widget _buildEmptyPhotoCard(int index) {
     return GestureDetector(
-      onTap: _showImageSourceDialog,
+      onTap: _showImageSourceSheet,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.cardBlack,
           borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withOpacity(0.03),
+          border: Border.all(
+            color: Colors.white10,
+            style: BorderStyle.solid,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.neonGold.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.05),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Iconsax.add,
-                color: AppColors.neonGold,
+                color: Colors.white24,
                 size: 24,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               'Add Photo',
               style: TextStyle(
-                fontSize: 14,
-                color: AppColors.neonGold,
-                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.3),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -1572,232 +1509,30 @@ log(jsonEncode(widget.userdata.interests).toString() );
   }
 }
 
-class Dimensions {
-  final int width;
-  final int height;
-  
-  Dimensions({required this.width, required this.height});
-}
+class ProfilePhoto {
+  final int id;
+  final String? base64;
+  final bool isLocal;
+  final bool isPrimary;
 
-class AdvancedImageCropper extends StatefulWidget {
-  final File imageFile;
-  final double aspectRatio;
-  
-  const AdvancedImageCropper({
-    required this.imageFile,
-    required this.aspectRatio,
+  ProfilePhoto({
+    required this.id,
+    this.base64,
+    required this.isLocal,
+    this.isPrimary = false,
   });
-  
-  @override
-  _AdvancedImageCropperState createState() => _AdvancedImageCropperState();
-}
 
-class _AdvancedImageCropperState extends State<AdvancedImageCropper> {
-  late PhotoViewController _photoViewController;
-  late TransformationController _transformationController;
-  
-  double _frameWidth = 0;
-  double _frameHeight = 0;
-  
-  @override
-  void initState() {
-    super.initState();
-    _photoViewController = PhotoViewController();
-    _transformationController = TransformationController();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calculateFrameDimensions();
-    });
-  }
-  
-  void _calculateFrameDimensions() {
-    final screenSize = MediaQuery.of(context).size;
-    final padding = 40.0;
-    
-    _frameWidth = screenSize.width - (padding * 2);
-    _frameHeight = _frameWidth / widget.aspectRatio;
-    
-    if (_frameHeight > screenSize.height * 0.7) {
-      _frameHeight = screenSize.height * 0.7;
-      _frameWidth = _frameHeight * widget.aspectRatio;
-    }
-    
-    setState(() {});
-  }
-  
-  @override
-  void dispose() {
-    _photoViewController.dispose();
-    _transformationController.dispose();
-    super.dispose();
-  }
-  
-  Future<File> _cropImage() async {
-    return widget.imageFile;
-  }
-  
-  @override
-  Widget build(BuildContext context) {
-    if (_frameWidth == 0 || _frameHeight == 0) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    
-    return Dialog(
-      backgroundColor: Colors.black,
-      insetPadding: EdgeInsets.zero,
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Colors.black,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.only(top: 60, bottom: 20),
-              child: Column(
-                children: [
-                  Text(
-                    'Crop Your Photo',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Image will be auto-converted to JPEG format',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade300,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            Expanded(
-              child: Center(
-                child: Container(
-                  width: _frameWidth,
-                  height: _frameHeight,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppColors.neonGold,
-                      width: 3,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(9),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: PhotoView(
-                            imageProvider: FileImage(widget.imageFile),
-                            controller: _photoViewController,
-                            backgroundDecoration: const BoxDecoration(color: Colors.black),
-                            minScale: PhotoViewComputedScale.contained * 0.5,
-                            maxScale: PhotoViewComputedScale.covered * 3,
-                            initialScale: PhotoViewComputedScale.contained,
-                            basePosition: Alignment.center,
-                            enableRotation: false,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 10),
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black.withOpacity(0.7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: Colors.grey.shade700),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 0,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Iconsax.close_circle, size: 20),
-                            const SizedBox(width: 8),
-                            Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 10),
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final croppedFile = await _cropImage();
-                          Navigator.pop(context, croppedFile);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.neonGold,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 0,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('USE PHOTO', style: TextStyle(fontWeight: FontWeight.w900)),
-                            const SizedBox(width: 8),
-                            Icon(Iconsax.tick_circle, size: 20),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+  ProfilePhoto copyWith({
+    int? id,
+    String? base64,
+    bool? isLocal,
+    bool? isPrimary,
+  }) {
+    return ProfilePhoto(
+      id: id ?? this.id,
+      base64: base64 ?? this.base64,
+      isLocal: isLocal ?? this.isLocal,
+      isPrimary: isPrimary ?? this.isPrimary,
     );
   }
-}
-
-class _FrameGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.15)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-    
-    for (int i = 1; i < 3; i++) {
-      final x = size.width * i / 3;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    
-    for (int i = 1; i < 3; i++) {
-      final y = size.height * i / 3;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-  
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
