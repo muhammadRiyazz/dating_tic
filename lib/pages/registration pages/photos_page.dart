@@ -896,7 +896,7 @@ class _PhotosPageState extends State<PhotosPage> {
         _showSuccessSnackbar('🎉 Registration Complete! Welcome to Weekend!');
         
         // Navigate to home
-        await Future.delayed(const Duration(milliseconds: 1500));
+        // await Future.delayed(const Duration(milliseconds: 1500));
         
         if (mounted) {
           context.read<MyProfileProvider>().fetchUserProfile(widget.userdata.userRegId.toString());

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:dating/main.dart';
 import 'package:dating/pages/first_page.dart';
+import 'package:dating/pages/plans/plans_list_page.dart';
 import 'package:dating/pages/profile/edit_profile.dart/Edit_Profile_Page.dart';
 import 'package:dating/pages/profile/my_profile.dart';
 import 'package:dating/pages/profile/profile_image_shimmer.dart';
@@ -329,18 +330,24 @@ class _ProfilePageState extends State<ProfilePage> {
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Text(
-                        "UPGRADE",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
+                    InkWell(onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) {
+                        return SubscriptionCardPage();
+                      },));
+                    },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Text(
+                          "UPGRADE",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),

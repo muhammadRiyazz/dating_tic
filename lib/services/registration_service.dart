@@ -335,7 +335,7 @@ Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
         Uri.parse("$baseUrl/update-profile"),
         body: requestBody,
       ).timeout(const Duration(seconds: 30));
-
+log(response.body. toString());
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         

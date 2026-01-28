@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 // Method to show Interests Bottom Sheet
 void showInterestsBottomSheet(BuildContext context) {
@@ -41,16 +42,12 @@ class _InterestsBottomSheetState extends State<_InterestsBottomSheet> {
 
   void _loadInitialData() {
     final updateProvider = context.read<UpdateProfileProvider>();
-    final registrationProvider = context.read<RegistrationDataProvider>();
     
     // Load current selected interests
     final currentInterests = updateProvider.userProfile.interests;
     _selectedInterests = List.from(currentInterests);
     
-    // Load interests list if not loaded
-    if (registrationProvider.interests.isEmpty) {
-      registrationProvider.loadInterests();
-    }
+   
     
     _initialized = true;
     if (mounted) setState(() {});
@@ -153,10 +150,10 @@ class _InterestsBottomSheetState extends State<_InterestsBottomSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-SizedBox(height: 12,),
+          SizedBox(height: 12,),
           // Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal:  24),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -182,27 +179,11 @@ SizedBox(height: 12,),
             child: Consumer<RegistrationDataProvider>(
               builder: (context, registrationProvider, child) {
                 if (!_initialized) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.neonGold,
-                    ),
-                  );
+                  return _buildShimmerLoading();
                 }
 
                 if (registrationProvider.interestsLoading) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(color: AppColors.neonGold),
-                        SizedBox(height: 16),
-                        Text(
-                          "Loading interests...",
-                          style: TextStyle(color: Colors.white38),
-                        ),
-                      ],
-                    ),
-                  );
+                  return _buildShimmerLoading();
                 }
 
                 if (registrationProvider.interests.isEmpty) {
@@ -261,21 +242,6 @@ SizedBox(height: 12,),
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 24),
-                                  // decoration: BoxDecoration(
-                                  //   color: Colors.white.withOpacity(0.05),
-                                  //   borderRadius: BorderRadius.circular(8),
-                                  // ),
-                                  // child: Text(
-                                  //   '(${interests.length})',
-                                  //   style: TextStyle(
-                                  //     color: Colors.white.withOpacity(0.4),
-                                  //     fontSize: 11,
-                                  //   ),
-                                  // ),
-                                ),
                               ],
                             ),
                           ),
@@ -307,9 +273,88 @@ SizedBox(height: 12,),
               },
             ),
           ),
-
-      
         ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[850]!,
+      highlightColor: Colors.grey[700]!,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Shimmer for 3 category sections
+            for (int i = 0; i < 3; i++) ...[
+              // Category header shimmer
+              Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      width: 120,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Interests chips shimmer
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: List.generate(8, (index) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 60 + (index % 3) * 20.0,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -345,13 +390,6 @@ class _InterestChip extends StatelessWidget {
                 ? AppColors.neonGold.withOpacity(0.09)
                 : Colors.white.withOpacity(0.03),
             borderRadius: BorderRadius.circular(25),
-            // border: Border.all(
-            //   color: isSelected
-            //       ? AppColors.neonGold.withOpacity(0.5)
-            //       : Colors.white.withOpacity(0.08),
-            //   width: isSelected ? 1.5 : 1,
-            // ),
-        
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -359,12 +397,6 @@ class _InterestChip extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  // color:
-                  //  isSelected
-                  //     ? AppColors.neonGold
-                  //     :
-                      
-                      //  Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(

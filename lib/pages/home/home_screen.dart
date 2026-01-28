@@ -6,15 +6,15 @@ import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
-// Your existing imports
 import 'package:dating/main.dart';
 import 'package:dating/models/profile_model.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:dating/providers/profile_provider.dart';
+import 'package:dating/providers/matches_provider.dart'; 
+import 'package:dating/providers/likers_provider.dart'; 
 import 'package:dating/pages/maches/match_page.dart';
 import 'package:dating/pages/profile/profile_page.dart';
 
-// Your category page imports
 import 'package:dating/pages/home/categories/categories_page_1.dart';
 import 'package:dating/pages/home/categories/categories_page_2.dart';
 import 'package:dating/pages/home/categories/categories_page_3.dart';
@@ -39,7 +39,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    // Make status bar transparent
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
@@ -71,7 +70,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     }
   }
 
-  // logic for Home content specifically
   Widget _buildHomeContent() {
     final homeProvider = context.watch<HomeProvider>();
     final bool hasData = homeProvider.categories.isNotEmpty;
@@ -120,7 +118,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    // Handling Back Button to return to Home index
     return PopScope(
       canPop: _navIndex == 0,
       onPopInvoked: (didPop) {
@@ -133,9 +130,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
         extendBody: true,
         body: Stack(
           children: [
-
-            
-            // Background Gradient (Bleeds into status bar)
             Positioned(
               top: 0, left: 0, right: 0,
               height: MediaQuery.of(context).size.height * 0.45,
@@ -150,7 +144,6 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
               ),
             ),
 
-            // Pages Layout
             IndexedStack(
               index: _navIndex,
               children: [
@@ -169,13 +162,11 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     );
   }
 
-  // ===================== NAVIGATION =====================
-
   Widget _buildAnimatedBottomNav() {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 600),
       curve: Curves.fastOutSlowIn,
-      bottom: _isNavVisible ? 20 : -100, // Floating effect
+      bottom: _isNavVisible ? 20 : -100,
       left: 20,
       right: 20,
       child: _buildFloatingNavBar(),
@@ -190,11 +181,7 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(35),
         border: Border.all(color: Colors.white.withOpacity(0.08)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
+          BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 10))
         ],
       ),
       child: ClipRRect(
@@ -219,7 +206,18 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
   Widget _navItem(IconData icon, int index, String label) {
     bool isSelected = _navIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _navIndex = index),
+      onTap: () async {
+        setState(() => _navIndex = index);
+        
+        // Refresh when tapping Match Tab
+        if (index == 1) {
+          final userId = await AuthService().getUserId();
+          if (mounted) {
+            context.read<MatchesProvider>().fetchMatches(userId.toString());
+            context.read<LikersProvider>().fetchLikers(userId.toString());
+          }
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -229,14 +227,14 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.neonGold : Colors.white54,
+              color: isSelected ? const Color(0xFFFFD700) : Colors.white54,
               size: isSelected ? 24 : 22,
             ),
             const SizedBox(height: 4),
             if (isSelected)
               Container(
                 height: 4, width: 4,
-                decoration: const BoxDecoration(color: AppColors.neonGold, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: Color(0xFFFFD700), shape: BoxShape.circle),
               )
             else
               Text(label, style: const TextStyle(color: Colors.white54, fontSize: 8)),
@@ -246,7 +244,7 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
     );
   }
 
-  // ===================== UI COMPONENTS =====================
+  // --- UI HELPERS ---
 
   Widget _buildBrandedHeader() {
     return Padding(
@@ -288,11 +286,11 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-              colors: [AppColors.neonGold, Color(0xFFFFB300), AppColors.richOrange],
+              colors: [Color(0xFFFFD700), Color(0xFFFFB300), Color(0xFFFF8C00)],
               begin: Alignment.topLeft, end: Alignment.bottomRight
           ),
           borderRadius: BorderRadius.circular(30),
-          boxShadow: [BoxShadow(color: AppColors.neonGold.withOpacity(0.3), blurRadius: 10)]
+          boxShadow: [BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.3), blurRadius: 10)]
         ),
         child: const Row(
           children: [
@@ -317,7 +315,7 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
         ),
         child: Row(
           children: [
-            const Icon(Iconsax.search_normal_1, color: AppColors.neonGold, size: 20),
+            const Icon(Iconsax.search_normal_1, color: Color(0xFFFFD700), size: 20),
             const SizedBox(width: 15),
             Text("Search your vibe...", style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
             const Spacer(),
