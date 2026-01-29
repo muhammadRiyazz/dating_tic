@@ -1,41 +1,54 @@
-import 'package:dating/models/plan_model.dart';
+import 'package:dating/services/subscription_service.dart';
 import 'package:flutter/material.dart';
-import '../services/subscription_service.dart';
+import '../models/plan_model.dart';
 
-class SubscriptionProvider with ChangeNotifier {
-  final SubscriptionService _service = SubscriptionService();
-  
+class SubscriptionProvider extends ChangeNotifier {
   List<SubscriptionPlanModel> _plans = [];
   bool _isLoading = false;
-  String? _errorMessage;
+  String _error = '';
+  int _currentPlanIndex = 1; // Default to most popular
 
   List<SubscriptionPlanModel> get plans => _plans;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+  String get error => _error;
+  int get currentPlanIndex => _currentPlanIndex;
+  bool get hasError => _error.isNotEmpty;
 
-  final List<String> _dummyImages = [
-    "https://images.pexels.com/photos/3171204/pexels-photo-3171204.jpeg",
-    "https://images.pexels.com/photos/4873585/pexels-photo-4873585.jpeg",
-    "https://images.pexels.com/photos/6579000/pexels-photo-6579000.jpeg",
-    "https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg",
-  ];
+  void setCurrentPlanIndex(int index) {
+    _currentPlanIndex = index;
+    notifyListeners();
+  }
 
-  Future<void> loadPlans(String userId) async {
+  Future<void> fetchPlans(String userId) async {
     _isLoading = true;
-    _errorMessage = null;
+    _error = '';
     notifyListeners();
 
     try {
-      _plans = await _service.fetchPlans(userId);
-      // Assign dummy images locally
+      _plans = await SubscriptionService.fetchPlans(userId: userId);
+      
+      // Find the most popular plan (with badge)
       for (int i = 0; i < _plans.length; i++) {
-        _plans[i].dummyImage = _dummyImages[i % _dummyImages.length];
+        if (_plans[i].badge?.toLowerCase().contains('popular') == true) {
+          _currentPlanIndex = i;
+          break;
+        }
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void retryFetch(String userId) {
+    _error = '';
+    fetchPlans(userId);
+  }
+
+  void clearError() {
+    _error = '';
+    notifyListeners();
   }
 }

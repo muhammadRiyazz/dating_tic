@@ -1,4 +1,7 @@
+import 'dart:developer';
 import 'dart:ui';
+import 'package:dating/main.dart';
+import 'package:dating/models/plan_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax/iconsax.dart';
@@ -6,47 +9,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 class PremiumSubscriptionPage extends StatefulWidget {
   final String image;
-  const PremiumSubscriptionPage({super.key, required this.image});
+  final SubscriptionPlanModel plan;
+
+  const PremiumSubscriptionPage({super.key, required this.image, required this.plan});
 
   @override
   State<PremiumSubscriptionPage> createState() => _PremiumSubscriptionPageState();
 }
 
 class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
-  // Define the Neon Gold Color
-  static const Color neonGold = Color(0xFFFFD700);
+  int? _selectedPriceId;
 
-  // Track which plan is selected
-  int _selectedPlanIndex = 1; // Default to Yearly (Best Value)
-
-  final List<Map<String, dynamic>> _pricingOptions = [
-    {
-      "title": "Monthly",
-      "price": "\$10.99",
-      "period": "/ month",
-      "badge": null,
-    },
-    {
-      "title": "Yearly",
-      "price": "\$100.99",
-      "period": "/ year",
-      "badge": "BEST VALUE",
-    },
-    {
-      "title": "Weekly",
-      "price": "\$4.99",
-      "period": "/ week",
-      "badge": null,
-    },
-  ];
-
-  final List<String> _features = [
-    "Decryption of a personal bodygraph",
-    "The movement of the planets",
-    "Calculating compatibility with others",
-    "Get Personal Bodygraph readings",
-    "Unlimited profile rewinds",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _selectedPriceId = widget.plan.activePriceId ?? 
+                      (widget.plan.prices.isNotEmpty ? widget.plan.prices[0].priceId : null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,66 +33,60 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. Starry/Cosmos Background
           Positioned.fill(
-            child: CachedNetworkImage(
-              imageUrl: widget.image,
-              fit: BoxFit.cover,
-            ),
+            child: CachedNetworkImage(imageUrl: widget.image, fit: BoxFit.cover),
           ),
-          
-          // 2. Dark Gradient Overlay for readability
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.2),
-                    Colors.black.withOpacity(0.6),
-                    Colors.black,
-                  ],
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.0, 0.4, 0.9],
+                    colors: [Colors.black.withOpacity(0.6), Colors.black.withOpacity(0.5), Colors.black.withOpacity(0.8)],
+                  ),
                 ),
               ),
             ),
           ),
-
-          // 3. Content
           SafeArea(
             child: Column(
               children: [
                 _buildAppBar(context),
-                
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 20),
                         _buildMainHeader(),
-                        const SizedBox(height: 35),
-                        
-                        // Pricing List
-                        Column(
-                          children: List.generate(_pricingOptions.length, (index) {
-                            return _buildPricingCard(index);
-                          }),
-                        ),
-
-                        const SizedBox(height: 32),
-                        _buildFeaturesSection(),
                         const SizedBox(height: 40),
+                        _buildSectionLabel("SELECT A DURATION"),
+                        const SizedBox(height: 16),
+                        
+                        // Handle Empty/Zero price list cases
+                        if (widget.plan.prices.isEmpty)
+                           _buildEmptyPricePlaceholder()
+                        else
+                          ...widget.plan.prices.map((price) => _buildPricingCard(price)),
+                        
+                        const SizedBox(height: 40),
+                        _buildSectionLabel("MEMBERSHIP BENEFITS"),
+                        const SizedBox(height: 16),
+                        _buildFeaturesSection(),
+                        const SizedBox(height: 120), 
                       ],
                     ),
                   ),
                 ),
-
-                _buildBottomActionSection(),
               ],
             ),
           ),
+          _buildBottomActionSection(),
         ],
       ),
     );
@@ -121,32 +94,16 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const SizedBox(width: 40), 
-          const Text(
-            "Pricing",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
+          _buildCircularGlassButton(
+            icon: Iconsax.arrow_left_2,
+            onTap: () => Navigator.pop(context),
           ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: const Icon(Icons.close, color: Colors.white, size: 20),
-            ),
-          ),
+          const Text("PLAN DETAILS", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3)),
+          const SizedBox(width: 44),
         ],
       ),
     );
@@ -154,244 +111,190 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
 
   Widget _buildMainHeader() {
     return Column(
-      children: [
-        const Text(
-          'Voyager',
-          style: TextStyle(
-            color: neonGold, // Applied Neon Gold here
-            fontSize: 32,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1,
-          ),
-        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
-        const SizedBox(height: 4),
-        Text(
-          'Most popular choice',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
-        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
-      ],
-    );
-  }
-
-  Widget _buildPricingCard(int index) {
-    final option = _pricingOptions[index];
-    bool isSelected = _selectedPlanIndex == index;
-
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPlanIndex = index),
-      child: AnimatedContainer(
-        duration: 250.ms,
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected ? neonGold : Colors.white.withOpacity(0.1), // Gold border when selected
-            width:  1,
-          ),
-          color: isSelected ? neonGold.withOpacity(0.1) : Colors.white.withOpacity(0.05),
-          // boxShadow: isSelected ? [
-          //   BoxShadow(
-          //     color: neonGold.withOpacity(0.15),
-          //     blurRadius: 15,
-          //     spreadRadius: 1,
-          //   )
-          // ] : null,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  // Custom Radio Button
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? neonGold : Colors.white30,
-                        width: 2,
-                      ),
-                      color: isSelected ? neonGold : Colors.transparent,
-                    ),
-                    child: isSelected 
-                      ? const Icon(Icons.check, size: 16, color: Colors.black) 
-                      : null,
-                  ),
-                  const SizedBox(width: 16),
-                  
-                  // Text Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          option['title'],
-                          style: TextStyle(
-                            color: isSelected ? neonGold : Colors.white, // Text gold when selected
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "${option['price']} ${option['period']}",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Badge
-                  if (option['badge'] != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: neonGold, // Badge Gold
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: neonGold.withOpacity(0.3),
-                            blurRadius: 8,
-                          )
-                        ]
-                      ),
-                      child: Text(
-                        option['badge'],
-                        style: const TextStyle(
-                          color: Colors.black, // Contrast color
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeaturesSection() {
-    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "What's included",
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
+          widget.plan.name.toUpperCase(),
+          style: TextStyle(color: AppColors.neonGold, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: -1),
         ),
-        const SizedBox(height: 20),
-        ...List.generate(_features.length, (index) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Row(
-              children: [
-                const Icon(Iconsax.tick_circle, color: neonGold, size: 20), // Gold Tick Icons
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _features[index],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
+        const SizedBox(height: 8),
+        Text(widget.plan.subtitle, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.w500)),
       ],
-    ).animate().fadeIn(delay: 300.ms);
+    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1);
   }
 
-  Widget _buildBottomActionSection() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
-        )
+  Widget _buildSectionLabel(String text) {
+    return Text(text, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 2));
+  }
+
+  // UPDATED: Fixed empty/complimentary management
+  Widget _buildPricingCard(PriceModel price) {
+    bool isSelected = _selectedPriceId == price.priceId;
+    bool isActivePrice = widget.plan.isActive && widget.plan.activePriceId == price.priceId;
+    bool isFree = (price.offerPrice ?? price.price) == 0;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPriceId = price.priceId),
+      child: AnimatedContainer(
+        duration: 250.ms,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected 
+                ? (isActivePrice ? Colors.green.withOpacity(0.6) : AppColors.neonGold.withOpacity(0.6))
+                : Colors.white.withOpacity(0.1),
+            width: 1.5,
+          ),
+          color: isSelected 
+              ? (isActivePrice ? Colors.green.withOpacity(0.05) : AppColors.neonGold.withOpacity(0.05))
+              : Colors.white.withOpacity(0.05),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Iconsax.tick_circle5 : Iconsax.record,
+              color: isSelected ? (isActivePrice ? Colors.green : AppColors.neonGold) : Colors.white24,
+              size: 24,
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Show the cycle name even if it is free
+                  Text(
+                    price.cycle.isEmpty ? "Standard Access" : price.cycle.toUpperCase(),
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  // Better labels for zero cost
+                  Text(
+                    isFree ? "Complimentary • No Cost" : "₹${price.offerPrice ?? price.price} total",
+                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            if (isActivePrice)
+              _buildBadge("ACTIVE", Colors.green)
+            else if (price.discount != null && price.discount! > 0)
+              _buildBadge("SAVE ${price.discount}%", AppColors.neonGold),
+          ],
+        ),
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildEmptyPricePlaceholder() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Row(
         children: [
-          // Subscribe Button in Neon Gold
-          ElevatedButton(
-            onPressed: () {
-              // Action logic
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: neonGold, // Button Solid Gold
-              foregroundColor: Colors.black, // Text Black for contrast
-              minimumSize: const Size(double.infinity, 60),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              elevation: 10,
-              // shadowColor: neonGold.withOpacity(0.4),
-            ),
-            child: const Text(
-              "Subscribe Now",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
-          
-          const SizedBox(height: 10),
-          
-          // // Terms & Privacy
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: [
-          //     _buildFooterLink("Terms of Use"),
-          //     _buildDot(),
-          //     _buildFooterLink("Privacy Policy"),
-          //     _buildDot(),
-          //     _buildFooterLink("Restore"),
-          //   ],
-          // ),
+           Icon(Iconsax.info_circle, color: AppColors.neonGold, size: 24),
+           const SizedBox(width: 16),
+           const Expanded(
+             child: Text(
+               "This basic tier includes permanent complimentary access.",
+               style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+             ),
+           ),
         ],
       ),
     );
   }
 
-  Widget _buildFooterLink(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: Colors.white.withOpacity(0.4),
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
+  Widget _buildBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(10), border: Border.all(color: color.withOpacity(0.4))),
+      child: Text(text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900)),
+    );
+  }
+
+  Widget _buildFeaturesSection() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        children: widget.plan.features.isEmpty 
+          ? [const Text("Standard basic features included.", style: TextStyle(color: Colors.white54))]
+          : widget.plan.features.map((f) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Iconsax.verify5, color: AppColors.neonGold, size: 20),
+                const SizedBox(width: 16),
+                Expanded(child: Text(f, style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4))),
+              ],
+            ),
+          )).toList(),
       ),
     );
   }
 
-  Widget _buildDot() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Text("•", style: TextStyle(color: Colors.white.withOpacity(0.4))),
+  Widget _buildBottomActionSection() {
+    bool isCurrentSelectionActive = widget.plan.isActive && _selectedPriceId == widget.plan.activePriceId;
+
+    return 
+      isCurrentSelectionActive ? SizedBox():
+    
+    Positioned(
+      bottom: 45, left: 25, right: 25,
+      child:   ElevatedButton(
+                  onPressed: () {
+                    // Logic to open details
+                    // Navigator.push(context, MaterialPageRoute(builder: (context) => 
+                    //   PremiumSubscriptionPage(
+                    //     image: SubscriptionService.getRandomBackgroundImage(provider.currentPlanIndex),
+                    //     plan: currentPlan,
+                    //   )
+                    // ));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:  AppColors.neonGold,
+                    foregroundColor: Colors.black,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                   "Subscribe Now", 
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)
+                  ),
+                ).animate(onPlay: (c) => c.repeat()).shimmer(
+                  // enabled: !currentPlan.isActive,
+                  duration: 2.seconds, 
+                  color: Colors.white30
+                ));
+  }
+
+  Widget _buildCircularGlassButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(50),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.2))),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
     );
   }
 }
