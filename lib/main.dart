@@ -11,6 +11,7 @@ import 'package:dating/providers/phone_registration_provider.dart';
 import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/providers/profile_update.dart';
 import 'package:dating/providers/registration_data_provider.dart' ;
+import 'package:dating/providers/subscription_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -52,6 +53,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => MatchesProvider()),
         ChangeNotifierProvider(create: (_) => InteractionProvider()),
         ChangeNotifierProvider(create: (_) => UpdateProfileProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
 
         
       ],
@@ -137,7 +139,7 @@ class _AuthCheckerState extends State<AuthChecker> {
     final isLoggedIn = await authService.isLoggedIn();
     
     // Simulate loading delay
-    await Future.delayed(const Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(milliseconds: 5000));
     
     if (mounted) {
       setState(() {

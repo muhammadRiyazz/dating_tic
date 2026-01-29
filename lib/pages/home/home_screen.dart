@@ -103,12 +103,12 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
               physics: const BouncingScrollPhysics(),
               children: homeProvider.categories.asMap().entries.map((entry) {
                 switch (entry.key) {
-                  case 0: return CategoriesPage1(profiles: entry.value.profiles);
-                  case 1: return CategoriesPage2(profiles: entry.value.profiles);
-                  case 2: return CategoriesPage3(profiles: entry.value.profiles);
+                  case 0: return CategoriesPage1(profiles: entry.value.profiles,goal:  entry.value.goalTitle,);
+                  case 1: return CategoriesPage2(profiles: entry.value.profiles,goal: entry.value.goalTitle,);
+                  case 2: return CategoriesPage3(profiles: entry.value.profiles,goal:  entry.value.goalTitle);
                   case 3: return CategoriesPage4(profiles: entry.value.profiles);
                   case 4: return CategoriesPage5(profiles: entry.value.profiles);
-                  default: return CategoriesPage1(profiles: entry.value.profiles);
+                  default: return CategoriesPage1(profiles: entry.value.profiles,goal: entry.value.goalTitle,);
                 }
               }).toList(),
             )

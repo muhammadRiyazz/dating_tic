@@ -6,8 +6,8 @@ import 'package:dating/main.dart';
 
 class CategoriesPage3 extends StatelessWidget {
       final List<Profile> profiles; // Add this line
-
-  const CategoriesPage3({super.key , required this.profiles});
+final  String goal;
+  const CategoriesPage3({super.key , required this.profiles,required this.goal});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class CategoriesPage3 extends StatelessWidget {
         mainAxisSpacing: 15,
       ),
       itemCount: profiles.length,
-      itemBuilder: (ctx, i) => ModelGridCard(profile: profiles[i]),
+      itemBuilder: (ctx, i) => ModelGridCard(profile: profiles[i],goal: goal,),
     );
   }
 }
@@ -29,15 +29,15 @@ class CategoriesPage3 extends StatelessWidget {
 
 class ModelGridCard extends StatelessWidget {
   final Profile profile;
-  
-  const ModelGridCard({super.key, required this.profile});
+  final String goal;
+  const ModelGridCard({super.key, required this.profile,required this.goal});
   
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (context) {
-          return ProfileDetailsPage(profiledata:profile ,);
+          return ProfileDetailsPage(profiledata:profile ,goalName: goal,match: false);
         },));
       },
       child: Container(

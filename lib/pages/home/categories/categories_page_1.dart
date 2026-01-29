@@ -16,8 +16,10 @@ import 'package:dating/providers/interaction_provider.dart';
 
 class CategoriesPage1 extends StatelessWidget {
   final List<Profile> profiles;
+    final String  goal;
 
-  const CategoriesPage1({super.key, required this.profiles});
+
+  const CategoriesPage1({super.key, required this.profiles,required this.goal});
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +41,9 @@ class CategoriesPage1 extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 110, top: 10, left: 12, right: 12),
       itemCount: profiles.length,
       itemBuilder: (ctx, i) => ImmersiveProfileCard(
-        key: ValueKey(profiles[i].userId), // Essential for animations
+        key: ValueKey(profiles[i].userId), 
         profile: profiles[i],
+        goal: goal,
       ),
     );
   }
@@ -48,7 +51,9 @@ class CategoriesPage1 extends StatelessWidget {
 
 class ImmersiveProfileCard extends StatefulWidget {
   final Profile profile;
-  const ImmersiveProfileCard({super.key, required this.profile});
+      final String  goal;
+
+  const ImmersiveProfileCard({super.key, required this.profile , required this.goal});
 
   @override
   State<ImmersiveProfileCard> createState() => _ImmersiveProfileCardState();
@@ -62,19 +67,17 @@ class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> with Ticker
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
 
-  String? _interactionStatus; // 'like' or 'pass'
+  String? _interactionStatus; 
 
   @override
   void initState() {
     super.initState();
     
-    // Controller for the card sliding out
     _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     _slideAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(
       CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack)
     );
 
-    // Controller for the central icon pop
     _overlayController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.5).animate(
       CurvedAnimation(parent: _overlayController, curve: Curves.elasticOut)
@@ -91,51 +94,69 @@ class _ImmersiveProfileCardState extends State<ImmersiveProfileCard> with Ticker
     super.dispose();
   }
 
-// inside _ImmersiveProfileCardState
+  // Cinematic Page Transition
+  // Route _createRoute(Widget page) {
+  //   return PageRouteBuilder(
+  //     transitionDuration: const Duration(milliseconds: 800),
+  //     reverseTransitionDuration: const Duration(milliseconds: 600),
+  //     pageBuilder: (context, animation, secondaryAnimation) => page,
+  //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  //       var begin = const Offset(0.0, 0.05); // Slight slide up
+  //       var end = Offset.zero;
+  //       var curve = Curves.easeOutQuart;
 
-void _onInteraction(String status) async {
-  setState(() => _interactionStatus = status);
-  
-  final interactionProv = Provider.of<InteractionProvider>(context, listen: false);
-  final homeProv = Provider.of<HomeProvider>(context, listen: false);
-  final authService = AuthService();
-  final userId = await authService.getUserId();
+  //       var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+  //       return FadeTransition(
+  //         opacity: animation,
+  //         child: SlideTransition(
+  //           position: animation.drive(tween),
+  //           child: child,
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  void _onInteraction(String status) async {
+    setState(() => _interactionStatus = status);
+    
+    final interactionProv = Provider.of<InteractionProvider>(context, listen: false);
+    final homeProv = Provider.of<HomeProvider>(context, listen: false);
+    final authService = AuthService();
+    final userId = await authService.getUserId();
     final myPhoto = await authService.getUserPhoto();
 
-  _overlayController.forward();
+    _overlayController.forward();
 
-  Offset endOffset = status == 'like' ? const Offset(1.5, 0.2) : const Offset(-1.5, 0.2);
-  _slideAnimation = Tween<Offset>(begin: Offset.zero, end: endOffset).animate(
-    CurvedAnimation(parent: _slideController, curve: Curves.easeInOutCubic)
-  );
+    Offset endOffset = status == 'like' ? const Offset(1.5, 0.2) : const Offset(-1.5, 0.2);
+    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: endOffset).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeInOutCubic)
+    );
 
-  if (status == 'like') {
-    HapticFeedback.heavyImpact();
-  } else {
-    HapticFeedback.mediumImpact();
+    status == 'like' ? HapticFeedback.heavyImpact() : HapticFeedback.mediumImpact();
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _slideController.forward().then((_) {
+        interactionProv.handleAction(
+          matchedfromUserImg: myPhoto ?? '',
+          context: context,
+          fromUser: userId.toString(),
+          toUser: widget.profile.userId.toString(),
+          status: status,
+          matchedUserImg: widget.profile.photo,
+          onComplete: () async {
+            final currentUserId = await AuthService().getUserId();
+            if (mounted) {
+              context.read<MatchesProvider>().fetchMatches(currentUserId.toString());
+            }
+            homeProv.removeProfileLocally(widget.profile.userId);
+          },
+        );
+      });
+    });
   }
 
-  Future.delayed(const Duration(milliseconds: 300), () {
-    _slideController.forward().then((_) {
-      interactionProv.handleAction(
-        matchedfromUserImg: myPhoto??'',
-        context: context,
-        fromUser: userId.toString(),
-        toUser: widget.profile.userId.toString(),
-        status: status,
-        matchedUserImg: widget.profile.photo, // Pass the image here
-        onComplete: ()async {
-           final userId = await AuthService().getUserId();
-    if (mounted) {
-      context.read<MatchesProvider>().fetchMatches(userId.toString());
-      // context.read<LikersProvider>().fetchLikers(userId.toString());
-    }
-          homeProv.removeProfileLocally(widget.profile.userId);
-        },
-      );
-    });
-  });
-}
   int _calculateAge(String? dobString) {
     if (dobString == null || dobString.isEmpty) return 0;
     try {
@@ -154,8 +175,15 @@ void _onInteraction(String status) async {
     return SlideTransition(
       position: _slideAnimation,
       child: GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(
-          builder: (context) => ProfileDetailsPage(profiledata: widget.profile))),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return ProfileDetailsPage(profiledata: widget.profile,goalName: widget.goal,match: false,);
+          },));
+          // Navigator.of(context).push(
+          //   _createRoute()
+          // );
+        },
         child: Container(
           height: 520,
           margin: const EdgeInsets.only(bottom: 25, left: 4, right: 4),
@@ -166,15 +194,16 @@ void _onInteraction(String status) async {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // 1. Profile Image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(35),
-                child: CachedNetworkImage(
-                  imageUrl: widget.profile.photo,
-                  height: double.infinity, width: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(color: Colors.grey[900]),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
+              // 1. Profile Image with HERO Tag
+              Hero(
+                tag: 'profile_image_${widget.profile.userId}',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(35),
+                  child: CachedNetworkImage(
+                    imageUrl: widget.profile.photo,
+                    height: double.infinity, width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
         
@@ -191,7 +220,7 @@ void _onInteraction(String status) async {
                 ),
               ),
 
-              // 3. Central Pop Animation (Live Icon)
+              // 3. Central Pop Animation (Icon feedback)
               FadeTransition(
                 opacity: _opacityAnimation,
                 child: ScaleTransition(
@@ -248,10 +277,7 @@ void _onInteraction(String status) async {
                               style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                           ),
                           const SizedBox(width: 8),
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 4),
-                            child: Icon(Icons.verified, color: Colors.blueAccent, size: 22),
-                          ),
+                          const Icon(Icons.verified, color: Colors.blueAccent, size: 22),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -272,7 +298,6 @@ void _onInteraction(String status) async {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // PASS BUTTON
                           GestureDetector(
                             onTap: () => _onInteraction('pass'),
                             child: circularActionBtnhome(Iconsax.close_circle, Colors.white, Colors.white10),
@@ -280,11 +305,9 @@ void _onInteraction(String status) async {
                           circularActionBtnhome(Iconsax.message_text5, Colors.white, Colors.white10),
                           circularActionBtnhome(Iconsax.video5, Colors.white, Colors.white10),
                           
-                          // LIKE BUTTON
                           GestureDetector(
                             onTap: () => _onInteraction('like'),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
+                            child: Container(
                               height: 65, width: 65,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(colors: [AppColors.neonGold, Color(0xFFFFB74D)]),

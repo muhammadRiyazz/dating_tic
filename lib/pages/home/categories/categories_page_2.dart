@@ -8,8 +8,9 @@ import 'package:iconsax/iconsax.dart';
 
 class CategoriesPage2 extends StatelessWidget {
   final List<Profile> profiles;
+    final String  goal;
 
-  const CategoriesPage2({super.key, required this.profiles});
+  const CategoriesPage2({super.key, required this.profiles,required this.goal});
 
   @override
   Widget build(BuildContext context) {
@@ -18,15 +19,16 @@ class CategoriesPage2 extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 110, top: 10, left: 14, right: 14),
       itemCount: profiles.length,
-      itemBuilder: (ctx, i) => EliteCard(profile: profiles[i]),
+      itemBuilder: (ctx, i) => EliteCard(profile: profiles[i],goal: goal,),
     );
   }
 }
 
 class EliteCard extends StatelessWidget {
   final Profile profile;
+    final String  goal;
 
-  const EliteCard({super.key, required this.profile});
+  const EliteCard({super.key, required this.profile,required this.goal});
 
   // Helper to calculate age from DOB string (YYYY-MM-DD)
   int _calculateAge(String? dobString) {
@@ -52,7 +54,7 @@ class EliteCard extends StatelessWidget {
     return GestureDetector(
         onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (context) {
-          return ProfileDetailsPage(profiledata:profile ,);
+          return ProfileDetailsPage(profiledata:profile ,goalName: goal,match: false);
         },));
       },
       child: Container(

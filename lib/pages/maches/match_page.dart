@@ -4,10 +4,12 @@ import 'package:dating/main.dart';
 import 'package:dating/models/profile_model.dart';
 import 'package:dating/pages/maches/Likers_List_Page.dart';
 import 'package:dating/pages/maches/widgets/matches_shimmer.dart';
+import 'package:dating/pages/user_profile_page.dart';
 import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/providers/likers_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
@@ -168,172 +170,185 @@ class _MatchesPageState extends State<MatchesPage> with SingleTickerProviderStat
 
   // --- REDESIGNED PREMIUM CARD UI ---
   Widget _buildHighStandardGridCard(Profile profile) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CachedNetworkImage(
-                imageUrl: profile.photo,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.white.withOpacity(0.05),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: const Color(0xFF161616),
-                  child: const Icon(Iconsax.user, color: Colors.white10, size: 40),
-                ),
-              ),
-            ),
+    return
+    
+    
+     InkWell( 
+onTap: () {
+  
+  HapticFeedback.lightImpact();
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return ProfileDetailsPage(profiledata: profile,goalName:profile.relationshipGoal!.name,match: true,);
+          },));
 
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.1),
-                      Colors.black.withOpacity(0.5),
-                      Colors.black.withOpacity(0.9),
-                    ],
-                    stops: const [0.0, 0.4, 0.7, 1.0],
+},     
+       child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: CachedNetworkImage(
+                  imageUrl: profile.photo,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: const Color(0xFF161616),
+                    child: const Icon(Iconsax.user, color: Colors.white10, size: 40),
                   ),
                 ),
               ),
-            ),
-
-            Positioned(
-              top: 12,
-              right: 12,
-              child: ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24),
+       
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.1),
+                        Colors.black.withOpacity(0.5),
+                        Colors.black.withOpacity(0.9),
+                      ],
+                      stops: const [0.0, 0.4, 0.7, 1.0],
                     ),
-                    child: const Icon(Iconsax.heart5, color: Color(0xFFFFD700), size: 14),
                   ),
                 ),
               ),
-            ),
-
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      profile.userName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
+       
+              Positioned(
+                top: 12,
+                right: 12,
+                child: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: const Icon(Iconsax.heart5, color: Color(0xFFFFD700), size: 14),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      profile.job ?? "Active nearby",
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+       
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        profile.userName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.white10),
-                                ),
-                                child: Text(
-                                  "${profile.relationshipGoal?.emoji ?? "✨"} Match",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
+                      const SizedBox(height: 2),
+                      Text(
+                        profile.job ?? "Active nearby",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white10),
+                                  ),
+                                  child: Text(
+                                    "${profile.relationshipGoal?.emoji ?? "✨"} Match",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        Container(
-                          height: 36,
-                          width: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Iconsax.call, color: Colors.white, size: 16),
-                        ),
-                        Container(
-                          height: 36,
-                          width: 36,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                          Container(
+                            height: 36,
+                            width: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
                             ),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFFA500).withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            child: const Icon(Iconsax.call, color: Colors.white, size: 16),
                           ),
-                          child: const Icon(Iconsax.message_text5, color: Colors.black, size: 16),
-                        ),
-                      ],
-                    ),
-                  ],
+                          Container(
+                            height: 36,
+                            width: 36,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFFA500).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Iconsax.message_text5, color: Colors.black, size: 16),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+           ),
+     );
   }
 
   Widget _buildTopGradient() {
