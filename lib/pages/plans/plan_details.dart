@@ -2,10 +2,15 @@ import 'dart:developer';
 import 'dart:ui';
 import 'package:dating/main.dart';
 import 'package:dating/models/plan_model.dart';
+import 'package:dating/pages/plans/upgrade_success_page.dart';
+import 'package:dating/providers/subscription_provider.dart';
+import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 class PremiumSubscriptionPage extends StatefulWidget {
   final String image;
@@ -27,6 +32,34 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
                       (widget.plan.prices.isNotEmpty ? widget.plan.prices[0].priceId : null);
   }
 
+  void _handleUpgrade() async {
+    if (_selectedPriceId == null) return;
+
+    final userId = await AuthService().getUserId();
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    HapticFeedback.mediumImpact();
+    
+    final success = await provider.upgradeUserPlan(userId.toString(), _selectedPriceId.toString());
+
+    if (mounted) {
+      if (success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UpgradeSuccessPage(planName: widget.plan.name))
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(provider.error),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          )
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,14 +71,14 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
           ),
           Positioned.fill(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     stops: const [0.0, 0.4, 0.9],
-                    colors: [Colors.black.withOpacity(0.6), Colors.black.withOpacity(0.5), Colors.black.withOpacity(0.8)],
+                    colors: [Colors.black.withOpacity(0.6), Colors.black.withOpacity(0.4), Colors.black.withOpacity(0.9)],
                   ),
                 ),
               ),
@@ -68,9 +101,9 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
                         _buildSectionLabel("SELECT A DURATION"),
                         const SizedBox(height: 16),
                         
-                        // Handle Empty/Zero price list cases
                         if (widget.plan.prices.isEmpty)
-                           _buildEmptyPricePlaceholder()
+                        SizedBox()
+                          //  _buildEmptyPricePlaceholder()
                         else
                           ...widget.plan.prices.map((price) => _buildPricingCard(price)),
                         
@@ -78,7 +111,7 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
                         _buildSectionLabel("MEMBERSHIP BENEFITS"),
                         const SizedBox(height: 16),
                         _buildFeaturesSection(),
-                        const SizedBox(height: 120), 
+                        const SizedBox(height: 140), 
                       ],
                     ),
                   ),
@@ -102,7 +135,7 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
             icon: Iconsax.arrow_left_2,
             onTap: () => Navigator.pop(context),
           ),
-          const Text("PLAN DETAILS", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3)),
+          const Text("PLAN DETAILS", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 3)),
           const SizedBox(width: 44),
         ],
       ),
@@ -115,7 +148,7 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
       children: [
         Text(
           widget.plan.name.toUpperCase(),
-          style: TextStyle(color: AppColors.neonGold, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: -1),
+          style: const TextStyle(color: AppColors.neonGold, fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: -1.5),
         ),
         const SizedBox(height: 8),
         Text(widget.plan.subtitle, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.w500)),
@@ -124,32 +157,33 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
   }
 
   Widget _buildSectionLabel(String text) {
-    return Text(text, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 2));
+    return Text(text, style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2));
   }
 
-  // UPDATED: Fixed empty/complimentary management
   Widget _buildPricingCard(PriceModel price) {
     bool isSelected = _selectedPriceId == price.priceId;
     bool isActivePrice = widget.plan.isActive && widget.plan.activePriceId == price.priceId;
     bool isFree = (price.offerPrice ?? price.price) == 0;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedPriceId = price.priceId),
+      onTap: () {
+        if (!isActivePrice) setState(() => _selectedPriceId = price.priceId);
+      },
       child: AnimatedContainer(
         duration: 250.ms,
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected 
-                ? (isActivePrice ? Colors.green.withOpacity(0.6) : AppColors.neonGold.withOpacity(0.6))
-                : Colors.white.withOpacity(0.1),
-            width: 1.5,
+                ? (isActivePrice ? Colors.green.withOpacity(0.6) : AppColors.neonGold)
+                : Colors.white.withOpacity(0.08),
+            width: isSelected ? 2 : 1,
           ),
           color: isSelected 
               ? (isActivePrice ? Colors.green.withOpacity(0.05) : AppColors.neonGold.withOpacity(0.05))
-              : Colors.white.withOpacity(0.05),
+              : Colors.white.withOpacity(0.04),
         ),
         child: Row(
           children: [
@@ -163,15 +197,13 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Show the cycle name even if it is free
                   Text(
-                    price.cycle.isEmpty ? "Standard Access" : price.cycle.toUpperCase(),
+                    price.cycle.isEmpty ? "ACCESS" : price.cycle.toUpperCase(),
                     style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
-                  // Better labels for zero cost
                   Text(
-                    isFree ? "Complimentary • No Cost" : "₹${price.offerPrice ?? price.price} total",
+                    isFree ? "Complimentary" : "₹${price.offerPrice ?? price.price} total",
                     style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
                   ),
                 ],
@@ -180,41 +212,17 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
             if (isActivePrice)
               _buildBadge("ACTIVE", Colors.green)
             else if (price.discount != null && price.discount! > 0)
-              _buildBadge("SAVE ${price.discount}%", AppColors.neonGold),
+              _buildBadge("-${price.discount}%", AppColors.neonGold),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEmptyPricePlaceholder() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-           Icon(Iconsax.info_circle, color: AppColors.neonGold, size: 24),
-           const SizedBox(width: 16),
-           const Expanded(
-             child: Text(
-               "This basic tier includes permanent complimentary access.",
-               style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
-             ),
-           ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBadge(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(10), border: Border.all(color: color.withOpacity(0.4))),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withOpacity(0.3))),
       child: Text(text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900)),
     );
   }
@@ -229,15 +237,15 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
       ),
       child: Column(
         children: widget.plan.features.isEmpty 
-          ? [const Text("Standard basic features included.", style: TextStyle(color: Colors.white54))]
+          ? [const Text("Standard features included.", style: TextStyle(color: Colors.white54))]
           : widget.plan.features.map((f) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.only(bottom: 18),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Iconsax.verify5, color: AppColors.neonGold, size: 20),
+                const Icon(Iconsax.verify5, color: AppColors.neonGold, size: 20),
                 const SizedBox(width: 16),
-                Expanded(child: Text(f, style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4))),
+                Expanded(child: Text(f, style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.4))),
               ],
             ),
           )).toList(),
@@ -246,39 +254,27 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
   }
 
   Widget _buildBottomActionSection() {
+    final provider = context.watch<SubscriptionProvider>();
     bool isCurrentSelectionActive = widget.plan.isActive && _selectedPriceId == widget.plan.activePriceId;
 
-    return 
-      isCurrentSelectionActive ? SizedBox():
+    if (isCurrentSelectionActive) return const SizedBox();
     
-    Positioned(
-      bottom: 45, left: 25, right: 25,
-      child:   ElevatedButton(
-                  onPressed: () {
-                    // Logic to open details
-                    // Navigator.push(context, MaterialPageRoute(builder: (context) => 
-                    //   PremiumSubscriptionPage(
-                    //     image: SubscriptionService.getRandomBackgroundImage(provider.currentPlanIndex),
-                    //     plan: currentPlan,
-                    //   )
-                    // ));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:  AppColors.neonGold,
-                    foregroundColor: Colors.black,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                   "Subscribe Now", 
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)
-                  ),
-                ).animate(onPlay: (c) => c.repeat()).shimmer(
-                  // enabled: !currentPlan.isActive,
-                  duration: 2.seconds, 
-                  color: Colors.white30
-                ));
+    return Positioned(
+      bottom: 40, left: 24, right: 24,
+      child: ElevatedButton(
+        onPressed: provider.isUpgrading ? null : _handleUpgrade,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.neonGold,
+          foregroundColor: Colors.black,
+          minimumSize: const Size(double.infinity, 64),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 0,
+        ),
+        child: provider.isUpgrading 
+          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5))
+          : const Text("Activate Membership", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+      ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds, color: Colors.white24),
+    );
   }
 
   Widget _buildCircularGlassButton({required IconData icon, required VoidCallback onTap}) {

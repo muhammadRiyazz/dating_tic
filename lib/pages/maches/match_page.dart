@@ -537,63 +537,47 @@ onTap: () {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Iconsax.favorite_chart,
-            color: Colors.white.withOpacity(0.05),
-            size: 100,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "No matches yet",
+Widget _buildEmptyState() {
+  return  Container(
+// color: Colors.amber,
+
+child: Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 10),
+  child: Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    
+    children: [  const Text(
+            "Your spark is waiting",
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.3),
-              fontSize: 16,
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
             ),
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: _loadData,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFFFFD700).withOpacity(0.1),
-                    const Color(0xFFFFA500).withOpacity(0.05),
-                  ],
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Iconsax.refresh,
-                    color: const Color(0xFFFFD700),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Tap to refresh",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
+          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+  
+          const SizedBox(height: 12),
+  
+          // 3. Descriptive Subtext
+          Text(
+            "Don't let the silence fool you. Someone special is just a swipe away. Keep exploring profiles or refresh to see new connections.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.4),
+              fontSize: 14,
+              height: 1.5,
+              fontWeight: FontWeight.w400,
             ),
-          ),
-        ],
-      ),
-    );
-  }
+          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
+  
+          const SizedBox(height: 40),
+  
+  ]),
+)
+
+  );
+}
 
   Widget _glassButton(IconData icon) {
     return Container(

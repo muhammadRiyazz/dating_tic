@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/providers/my_profile_provider.dart';
+import 'package:dating/providers/permission_provider.dart';
 import 'package:dating/providers/profile_provider.dart' show HomeProvider;
 import 'package:dating/services/auth_service.dart';
 import 'package:dating/main.dart'; 
@@ -36,21 +38,40 @@ class _SplashScreenState extends State<SplashScreen> {
     super.didChangeDependencies();
   }
 
-  Future<void> _initApp() async {
+   Future<void> _initApp() async {
+    // Initialize loading steps
+  
+
     final authService = AuthService();
     final userId = await authService.getUserId();
 
     if (userId != null) {
-      if (mounted) {
-        context.read<MyProfileProvider>().fetchUserProfile(userId);
-        Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
-      }
+      // Step 1: User profile
+      context.read<MyProfileProvider>().fetchUserProfile(userId);
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Step 2: Home data
+      Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Step 3: Permissions (IMPORTANT!)
+      final permissionProvider = Provider.of<PermissionProvider>(context, listen: false);
+      await permissionProvider.loadPermissions(userId);
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Step 4: Matches
+      context.read<MatchesProvider>().fetchMatches(userId.toString());
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Step 5: Complete
+    } else {
+   
+   
     }
+
     
-    // Total branding time
-    await Future.delayed(const Duration(milliseconds: 4500));
-    
-    // Navigate logic here...
+    // Total branding time (minimum 3 seconds)
+    await Future.delayed(const Duration(milliseconds: 1500));
   }
 
   @override

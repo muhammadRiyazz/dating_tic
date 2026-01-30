@@ -18,7 +18,34 @@ class SubscriptionProvider extends ChangeNotifier {
     _currentPlanIndex = index;
     notifyListeners();
   }
+// subscription_provider.dart
 
+bool _isUpgrading = false;
+bool get isUpgrading => _isUpgrading;
+
+Future<bool> upgradeUserPlan(String userId, String priceId) async {
+  _isUpgrading = true;
+  notifyListeners();
+
+  try {
+    final result = await SubscriptionService.upgradePlan(
+      userId: userId, 
+      planPriceId: priceId
+    );
+
+    if (result['status'] == 'SUCCESS') {
+      // Re-fetch plans to update the UI state locally
+      await fetchPlans(userId);
+      return true;
+    } else {
+      _error = result['statusDesc'] ?? "Upgrade failed";
+      return false;
+    }
+  } finally {
+    _isUpgrading = false;
+    notifyListeners();
+  }
+}
   Future<void> fetchPlans(String userId) async {
     _isLoading = true;
     _error = '';

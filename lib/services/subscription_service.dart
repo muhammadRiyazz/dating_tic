@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'package:dating/core/url.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/plan_model.dart';
 
 class SubscriptionService {
-  static const String _baseUrl = 'https://tictechnologies.in/stage/weekend';
   
   // List of dummy background images
   static final List<String> _backgroundImages = [
@@ -27,7 +27,7 @@ class SubscriptionService {
   static Future<List<SubscriptionPlanModel>> fetchPlans({required String userId}) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/plans'),
+        Uri.parse('$baseUrl/plans'),
      
         body: {
           'userId': userId,
@@ -50,7 +50,30 @@ class SubscriptionService {
       throw Exception('Network error: $e');
     }
   }
+// subscription_service.dart
 
+static Future<Map<String, dynamic>> upgradePlan({
+  required String userId,
+  required String planPriceId,
+}) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/upgrade-plan'),
+      body: {
+        'userId': userId,
+        'planPriceId': planPriceId,
+      },
+    );
+
+    final data = json.decode(response.body);
+    return data; // Return the full map to handle success/failure in provider
+  } catch (e) {
+    return {
+      "status": "FAILED",
+      "statusDesc": "Connection error: $e"
+    };
+  }
+}
   // Get icon based on plan name
   static String getIconForPlan(String planName) {
     switch (planName.toLowerCase()) {
