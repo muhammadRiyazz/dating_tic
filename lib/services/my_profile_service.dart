@@ -13,7 +13,7 @@ class ProfileService {
         Uri.parse('$_baseUrl/profile-by-id'),
         body:{'userId': userId},
       );
-
+log(response.body.toString());
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         

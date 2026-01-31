@@ -211,6 +211,53 @@ class RegistrationDataService {
 
 class RegistrationService {
 
+ Future<bool> deletePhoto({
+    required String photoId,
+    required String type, // 'public' or 'private'
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/delete-user-photo');
+      
+      log('Deleting photo: photoId=$photoId, type=$type');
+      
+      final response = await http.post(
+        url,
+        body: {
+          'photoId': photoId,
+          'type': type,
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      log('Delete photo response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        if (responseData['status'] == 'SUCCESS' || responseData['statusCode'] == 0) {
+          return true;
+        } else {
+          log('Delete failed: ${responseData['statusDesc']}');
+          return false;
+        }
+      } else {
+        log('HTTP error: ${response.statusCode}');
+        return false;
+      }
+    } on http.ClientException catch (e) {
+      log('Client exception: $e');
+      return false;
+    } on SocketException catch (e) {
+      log('Socket exception: $e');
+      return false;
+    } on TimeoutException catch (e) {
+      log('Timeout exception: $e');
+      return false;
+    } catch (e) {
+      log('Unexpected error: $e');
+      return false;
+    }
+  }
+
 
 
   
@@ -323,7 +370,15 @@ Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
       'mainphotourl': data.mainPhotoUrl?.toString() ?? '',
       'notificationFcm': fcmToken ,
       'last_seen': DateTime.now().toIso8601String(),
+      'privatephotos':jsonEncode(  data.privatePhotos)
+      
+    ,
+    'interested_gender':data.intrestgender??'1',
+'voiceEncryption':data.voiceEncryption??'',
+'voiceEncryptionExtension':data.voiceEncryptionExtension??'',
+
       'Is_live': '1',
+      'phno':data.phoneNo??''
     };
   }
 
@@ -445,7 +500,6 @@ log(response.body. toString());
 
 
 
-
 Future<void> fetchprofiles(BuildContext context)async{
 final authService = AuthService();
     final userId = await authService.getUserId();
@@ -456,3 +510,6 @@ final authService = AuthService();
       Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
     }
 }
+
+
+

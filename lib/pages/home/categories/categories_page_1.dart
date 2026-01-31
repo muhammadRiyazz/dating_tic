@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating/models/profile_model.dart';
@@ -49,11 +50,17 @@ class CategoriesPage1 extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 110, top: 10, left: 12, right: 12),
         itemCount: profiles.length,
-        itemBuilder: (ctx, i) => ImmersiveProfileCard(
+        itemBuilder: (ctx, i) {
+log(profiles[i].userId.toString());
+log('message-----');
+          return   ImmersiveProfileCard(
           key: ValueKey(profiles[i].userId),
           profile: profiles[i],
           goal: goal,
-        ),
+        );
+        }
+        
+       
       ),
     );
   }
@@ -117,7 +124,7 @@ class _ImmersiveProfileCardState extends State<ImmersiveProfileCard>
     _overlayController.dispose();
     super.dispose();
   }
-void _showPremiumUpgrade({String? featureName, String? description}) {
+void _showPremiumUpgrade() {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -349,6 +356,7 @@ void _showPremiumUpgrade({String? featureName, String? description}) {
             alignment: Alignment.center,
             children: [
               // 1. Profile Image with HERO Tag
+
               Hero(
                 tag: 'profile_image_${widget.profile.userId}',
                 child: ClipRRect(
@@ -446,7 +454,7 @@ void _showPremiumUpgrade({String? featureName, String? description}) {
                           color: AppColors.neonGold, size: 14),
                       const SizedBox(width: 5),
                       Text(
-                        widget.profile.city ?? "Nearby",
+                                               widget.profile.city??'',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,

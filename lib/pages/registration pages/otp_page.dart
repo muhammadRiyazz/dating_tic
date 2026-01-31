@@ -277,6 +277,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       // Step 2: Create model with userId
       final UserRegistrationModel userdata = UserRegistrationModel().copyWith(
         userRegId: provider.userId,
+
+        phoneNo: widget.phoneNumber
+        
       );
 
       log("📝 New user ID: ${userdata.userRegId}");

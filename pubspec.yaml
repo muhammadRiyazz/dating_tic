@@ -34,7 +34,10 @@ dependencies:
   geolocator: ^14.0.2
   geocoding: ^4.0.0
   glassmorphism: ^3.0.0 
-  permission_handler_platform_interface: ^4.3.0
+  record: ^6.2.0
+  audioplayers: ^6.5.1
+  path_provider: ^2.1.5
+  permission_handler: ^12.0.1
 
   appinio_swiper: ^2.0.0
   google_maps_flutter: ^2.2.3
@@ -50,6 +53,7 @@ dependencies:
   flutter_local_notifications: ^19.5.0
   custom_refresh_indicator: ^4.0.1
   flutter_native_splash: ^2.4.7
+  permission_handler_platform_interface: ^4.3.0
 
 dev_dependencies:
   flutter_test:

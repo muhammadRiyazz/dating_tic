@@ -1,23 +1,27 @@
-// lib/pages/registration/gender_page.dart
+// lib/pages/registration/looking_for_page.dart
 import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/registration%20pages/HeightPage.dart';
+import 'package:dating/pages/registration%20pages/relationship_goals_Page.dart';
 import 'package:dating/providers/registration_data_provider.dart';
 import 'package:dating/widgets/shimmer_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 
-class GenderPage extends StatefulWidget {
-  const GenderPage({super.key, required this.userdata});
+class LookingForPage extends StatefulWidget {
+  const LookingForPage({super.key, required this.userdata});
   final UserRegistrationModel userdata;
 
   @override
-  _GenderPageState createState() => _GenderPageState();
+  _LookingForPageState createState() => _LookingForPageState();
 }
 
-class _GenderPageState extends State<GenderPage> {
-  // Premium Avatar URLs (Replace these with your actual image links)
+
+
+
+class _LookingForPageState extends State<LookingForPage> {
+  // Premium Avatar URLs (Matching your previous design)
   final String maleAvatarUrl = "https://cdn3d.iconscout.com/3d/premium/thumb/man-avatar-6299535-5187871.png";
   final String femaleAvatarUrl = "https://cdn3d.iconscout.com/3d/premium/thumb/woman-avatar-6299533-5187869.png";
 
@@ -34,14 +38,28 @@ class _GenderPageState extends State<GenderPage> {
 
   void _continue() {
     final provider = context.read<RegistrationDataProvider>();
-    if (!provider.validateGenderPage()) {
+    
+    // Use the looking for validation from your provider
+    if (provider.selectedLookingForId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(backgroundColor: Colors.red, content: Text('Please select your gender')),
+        const SnackBar(
+          backgroundColor: Colors.red, 
+          content: Text('Please select who you are looking for')
+        ),
       );
       return;
     }
-    final data = widget.userdata.copyWith(gender: provider.selectedGenderId);
-    Navigator.push(context, MaterialPageRoute(builder: (context) => HeightPage(userdata: data)));
+
+    // Update userdata with lookingFor preference
+    final data = widget.userdata.copyWith(
+      // Ensure your model has lookingFor field or update accordingly
+      intrestgender: provider.selectedLookingForId 
+    );
+
+    Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) => RelationshipGoalsPage(userdata: data))
+    );
   }
 
   @override
@@ -53,13 +71,13 @@ class _GenderPageState extends State<GenderPage> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-                    colors: [
-                      AppColors.neonGold.withOpacity(0.1),
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+            colors: [
+              AppColors.neonGold.withOpacity(0.1),
+              Colors.transparent,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
         child: SafeArea(
           child: Padding(
@@ -72,7 +90,7 @@ class _GenderPageState extends State<GenderPage> {
                 Expanded(
                   child: provider.gendersLoading
                       ? _buildShimmerLoading()
-                      : _buildGenderSelection(provider),
+                      : _buildPreferenceSelection(provider),
                 ),
                 _buildSecurityCard(),
                 _buildContinueButton(provider),
@@ -85,14 +103,12 @@ class _GenderPageState extends State<GenderPage> {
     );
   }
 
-  Widget _buildGenderSelection(RegistrationDataProvider provider) {
-    // Separate Male/Female for the Top Boxes
+  Widget _buildPreferenceSelection(RegistrationDataProvider provider) {
     final primaryGenders = provider.genders.where((g) {
       final title = g['genderTitle']?.toString().toLowerCase() ?? '';
       return title == 'male' || title == 'female' || title == 'man' || title == 'woman';
     }).toList();
 
-    // Sort to ensure Male is first usually
     primaryGenders.sort((a, b) => b['genderTitle'].toString().length.compareTo(a['genderTitle'].toString().length));
 
     final otherGenders = provider.genders.where((g) => !primaryGenders.contains(g)).toList();
@@ -103,7 +119,6 @@ class _GenderPageState extends State<GenderPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 10),
-          // 1. PRIMARY AVATAR BOXES (Male & Female)
           Row(
             children: primaryGenders.map((gender) {
               final title = gender['genderTitle']?.toString().toLowerCase() ?? '';
@@ -123,7 +138,7 @@ class _GenderPageState extends State<GenderPage> {
           if (otherGenders.isNotEmpty) ...[
             const SizedBox(height: 35),
             Text(
-              "More Options".toUpperCase(),
+              "Other Preferences".toUpperCase(),
               style: TextStyle(
                 color: Colors.white.withOpacity(0.4),
                 fontSize: 12,
@@ -132,7 +147,6 @@ class _GenderPageState extends State<GenderPage> {
               ),
             ),
             const SizedBox(height: 16),
-            // 2. LIST VIEW (For Others)
             ...otherGenders.map((gender) => _buildSecondaryListTile(gender, provider)),
           ],
           const SizedBox(height: 20),
@@ -141,15 +155,15 @@ class _GenderPageState extends State<GenderPage> {
     );
   }
 
-  // Large Boxes with Image Avatars
   Widget _buildAvatarBox(dynamic gender, String imageUrl, RegistrationDataProvider provider) {
-    final isSelected = provider.selectedGenderId == gender['genderId'].toString();
+    // Logic changed to use selectedLookingForId
+    final isSelected = provider.selectedLookingForId == gender['genderId'].toString();
     
     return GestureDetector(
-      onTap: () => provider.selectGender(gender['genderId'].toString()),
+      onTap: () => provider.selectLookingFor(gender['genderId'].toString()),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        height: 200, // Slightly taller for images
+        height: 200,
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.neonGold : AppColors.cardBlack.withOpacity(0.6),
@@ -169,7 +183,6 @@ class _GenderPageState extends State<GenderPage> {
         child: Column(
           children: [
             const SizedBox(height: 15),
-            // Selection Radio Indicator
             Align(
               alignment: Alignment.topRight,
               child: Padding(
@@ -190,21 +203,15 @@ class _GenderPageState extends State<GenderPage> {
                 ),
               ),
             ),
-            // Avatar Image
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Image.network(
                   imageUrl,
                   fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-                  },
                 ),
               ),
             ),
-            // Gender Title
             Text(
               gender['genderTitle']?.toString().toUpperCase() ?? '',
               style: TextStyle(
@@ -221,24 +228,20 @@ class _GenderPageState extends State<GenderPage> {
     );
   }
 
-  // Secondary List Style
   Widget _buildSecondaryListTile(dynamic gender, RegistrationDataProvider provider) {
-    final isSelected = provider.selectedGenderId == gender['genderId'].toString();
+    // Logic changed to use selectedLookingForId
+    final isSelected = provider.selectedLookingForId == gender['genderId'].toString();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
-        onTap: () => provider.selectGender(gender['genderId'].toString()),
+        onTap: () => provider.selectLookingFor(gender['genderId'].toString()),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.neonGold.withOpacity(0.05) : Colors.white.withOpacity(0.02),
             borderRadius: BorderRadius.circular(20),
-            // border: Border.all(
-            //   color: isSelected ? AppColors.neonGold : Colors.white.withOpacity(0.05),
-            //   width: 1,
-            // ),
           ),
           child: Row(
             children: [
@@ -282,12 +285,12 @@ class _GenderPageState extends State<GenderPage> {
         ),
         const SizedBox(height: 30),
         const Text(
-          'Which one are you?',
+          'Who do you want to meet?', // UPDATED TITLE
           style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
         ),
         const SizedBox(height: 8),
         Text(
-          'Select your gender to see relevant people.',
+          'Choose who you’d like to see on your feed.', // UPDATED SUBTITLE
           style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
         ),
       ],
@@ -302,13 +305,13 @@ class _GenderPageState extends State<GenderPage> {
         color: Colors.white.withOpacity(0.03),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          Icon(Iconsax.lock, color: AppColors.neonGold.withOpacity(0.5), size: 18),
-          const SizedBox(width: 12),
-          const Expanded(
+          Icon(Iconsax.heart_tick, color: AppColors.neonGold, size: 18),
+          SizedBox(width: 12),
+          Expanded(
             child: Text(
-              'Your profile identity is kept secure and private.',
+              'We will use this preference to show you the best matches.',
               style: TextStyle(color: Colors.white38, fontSize: 11),
             ),
           ),
@@ -318,7 +321,7 @@ class _GenderPageState extends State<GenderPage> {
   }
 
   Widget _buildContinueButton(RegistrationDataProvider provider) {
-    final bool canContinue = provider.selectedGenderId != null;
+    final bool canContinue = provider.selectedLookingForId != null;
     return SizedBox(
       width: double.infinity,
       height: 60,

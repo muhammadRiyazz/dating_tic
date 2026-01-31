@@ -81,12 +81,9 @@ class UpdateProfileProvider with ChangeNotifier {
     String? address,
   }) {
     _userProfile = _userProfile.copyWith(
-      latitude: latitude,
-      longitude: longitude,
-      city: city,
-      state: state,
-      country: country,
-      address: address,
+
+     latitude: latitude??'', longitude: longitude??'', city: city??'', state: state??'', country: country??'', address: address??'',
+     
     );
     notifyListeners();
   }
@@ -98,8 +95,8 @@ class UpdateProfileProvider with ChangeNotifier {
   }
 
   // Photos
-  void updatePhotos(List<String> photos) {
-    _userProfile = _userProfile.copyWith(photos: photos);
+  void updatePhotos(List<Photo> photos) {
+    _userProfile = _userProfile.copyWith(photos:photos );
     notifyListeners();
   }
 
@@ -108,8 +105,8 @@ class UpdateProfileProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void addPhoto(String photoUrl) {
-    List<String> currentPhotos = List.from(_userProfile.photos);
+  void addPhoto(Photo photoUrl) {
+    List<Photo> currentPhotos = List.from(_userProfile.photos);
     currentPhotos.add(photoUrl);
     _userProfile = _userProfile.copyWith(photos: currentPhotos);
     notifyListeners();

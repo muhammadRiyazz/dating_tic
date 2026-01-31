@@ -31,10 +31,13 @@ log('user id ------- $userId');
         Uri.parse('$baseUrl/profile-grouped-by-goal'),
         body: {'userId': userId},
       );
+      log('fetchHomeData-----');
 log(response.body);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'SUCCESS') {
+
+          
           _categories = (data['data'] as List)
               .map((item) => GoalProfile.fromJson(item))
               .toList();
@@ -42,11 +45,14 @@ log(response.body);
           _error = data['statusDesc'];
         }
       } else {
+        log('Server Error');
         _error = 'Server Error: ${response.statusCode}';
       }
     } catch (e) {
+      log(e.toString());
       _error = e.toString();
     } finally {
+      log('finally--');
       _isLoading = false;
       notifyListeners();
     }

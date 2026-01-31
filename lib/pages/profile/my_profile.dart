@@ -38,7 +38,7 @@ class MyDetailedProfilePage extends StatelessWidget {
     if (userProfile == null) return const ProfileShimmer();
 
     final String bgImg = userProfile.photo;
-    final List<String> photos = userProfile.photos;
+    final List<Photo> photos = userProfile.photos;
     final int age = _calculateAge(userProfile.dateOfBirth);
 
     return Scaffold(
@@ -130,7 +130,7 @@ class MyDetailedProfilePage extends StatelessWidget {
     );
   }
 
-  void _openGallery(BuildContext context, List<String> photos, int initialIndex) {
+  void _openGallery(BuildContext context, List<Photo> photos, int initialIndex) {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
@@ -168,12 +168,12 @@ class MyDetailedProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildGridItem(List<String> photos, int index) {
+  Widget _buildGridItem(List<Photo> photos, int index) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         image: DecorationImage(
-          image: NetworkImage(photos[index]),
+          image: NetworkImage(photos[index].photoUrl),
           fit: BoxFit.cover,
         ),
       ),
@@ -372,7 +372,7 @@ class MyDetailedProfilePage extends StatelessWidget {
 // --- FULL SCREEN GALLERY WIDGET ---
 
 class FullScreenGallery extends StatefulWidget {
-  final List<String> photos;
+  final List<Photo> photos;
   final int initialIndex;
 
   const FullScreenGallery({super.key, required this.photos, required this.initialIndex});
@@ -409,7 +409,7 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
                 maxScale: 3.0,
                 child: Center(
                   child: Image.network(
-                    widget.photos[index],
+                    widget.photos[index].photoUrl,
                     fit: BoxFit.contain,
                     width: double.infinity,
                   ),

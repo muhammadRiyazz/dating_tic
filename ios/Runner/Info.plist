@@ -83,7 +83,10 @@
 	<!-- Notification Permissions -->
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>This app needs to send you notifications for new matches, messages, and updates.</string>
-	
+	<key>NSMicrophoneUsageDescription</key>
+    <string>We need access to your microphone to record your voice bio.</string>
+    <key>NSAppleMusicUsageDescription</key>
+    <string>We need access to play back your recording.</string>
 	<!-- Orientation Settings -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

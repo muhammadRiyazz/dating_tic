@@ -1,5 +1,6 @@
 import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
+import 'package:dating/pages/registration%20pages/Looking_gender_Page.dart';
 import 'package:dating/pages/registration%20pages/location_Page.dart';
 import 'package:dating/pages/registration%20pages/relationship_goals_Page.dart';
 import 'package:flutter/material.dart';
@@ -409,7 +410,8 @@ class _LifestylePageState extends State<LifestylePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RelationshipGoalsPage( userdata: data,),
+        builder: (context) => LookingForPage
+        ( userdata: data,),
       ),
     );
   }

@@ -24,6 +24,9 @@ class RegistrationDataProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _genders = [];
   String? _gendersError;
   String? _selectedGenderId;
+
+  // --- NEW: Looking For (Preference) ---
+  String? _selectedLookingForId;
   
   // Education levels
   DataLoadStatus _educationStatus = DataLoadStatus.initial;
@@ -60,6 +63,10 @@ class RegistrationDataProvider extends ChangeNotifier {
   bool get gendersLoaded => _gendersStatus == DataLoadStatus.success;
   bool get gendersHasError => _gendersStatus == DataLoadStatus.error;
   bool get gendersIsEmpty => _gendersStatus == DataLoadStatus.empty;
+
+  // --- NEW: Getters for Looking For ---
+  String? get selectedLookingForId => _selectedLookingForId;
+  bool get isLookingForSelected => _selectedLookingForId != null;
   
   // Getters for education
   DataLoadStatus get educationStatus => _educationStatus;
@@ -103,6 +110,7 @@ class RegistrationDataProvider extends ChangeNotifier {
     _genders = [];
     _gendersError = null;
     _selectedGenderId = null;
+    _selectedLookingForId = null; // Reset preference
     
     _educationStatus = DataLoadStatus.initial;
     _educationLevels = [];
@@ -124,6 +132,7 @@ class RegistrationDataProvider extends ChangeNotifier {
   void resetSelections() {
     _selectedGoalId = null;
     _selectedGenderId = null;
+    _selectedLookingForId = null; // Reset preference
     _selectedEducationId = null;
     _selectedInterestIds = [];
     _selectedInterestNames = [];
@@ -247,6 +256,12 @@ class RegistrationDataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // --- NEW: Set looking for preference ---
+  void selectLookingFor(String genderId) {
+    _selectedLookingForId = genderId;
+    notifyListeners();
+  }
+
   // Set selected education
   void selectEducation(String educationId) {
     _selectedEducationId = educationId;
@@ -297,6 +312,15 @@ class RegistrationDataProvider extends ChangeNotifier {
     );
   }
 
+  // --- NEW: Get selected looking for details ---
+  Map<String, dynamic>? getSelectedLookingFor() {
+    if (_selectedLookingForId == null) return null;
+    return _genders.firstWhere(
+      (gender) => gender['genderId'].toString() == _selectedLookingForId,
+      orElse: () => {},
+    );
+  }
+
   // Get selected education details
   Map<String, dynamic>? getSelectedEducation() {
     if (_selectedEducationId == null) return null;
@@ -312,17 +336,19 @@ class RegistrationDataProvider extends ChangeNotifier {
   
   // Validate form
   bool validateGenderPage() => isGenderSelected;
+  bool validateLookingForPage() => isLookingForSelected; // NEW
   bool validateGoalsPage() => isGoalSelected;
   bool validateInterestsPage() => _selectedInterestIds.length >= 3;
   
   // Get summary data for API submission
-  Map<String, dynamic> getRegistrationData() {
-    return {
-      'genderId': _selectedGenderId,
-      'goalId': _selectedGoalId,
-      'educationId': _selectedEducationId,
-      'jobTitle': _jobTitle,
-      'interestIds': _selectedInterestIds,
-    };
-  }
+  // Map<String, dynamic> getRegistrationData() {
+  //   return {
+  //     'genderId': _selectedGenderId,
+  //     'lookingForId': _selectedLookingForId, // UPDATED
+  //     'goalId': _selectedGoalId,
+  //     'educationId': _selectedEducationId,
+  //     'jobTitle': _jobTitle,
+  //     'interestIds': _selectedInterestIds,
+  //   };
+  // }
 }

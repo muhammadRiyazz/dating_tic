@@ -32,32 +32,133 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
                       (widget.plan.prices.isNotEmpty ? widget.plan.prices[0].priceId : null);
   }
 
-  void _handleUpgrade() async {
-    if (_selectedPriceId == null) return;
-
-    final userId = await AuthService().getUserId();
-    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
-
-    HapticFeedback.mediumImpact();
+  void _showConfirmationBottomSheet() {
+    final selectedPrice = widget.plan.prices.firstWhere((p) => p.priceId == _selectedPriceId);
     
-    final success = await provider.upgradeUserPlan(userId.toString(), _selectedPriceId.toString());
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.6),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 30),
+              
+              // Crown Icon with Glow
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.neonGold.withOpacity(0.1),
+                  boxShadow: [BoxShadow(color: AppColors.neonGold.withOpacity(0.1), blurRadius: 20)],
+                  border: Border.all(color: AppColors.neonGold.withOpacity(0.2))
+                ),
+                child: const Icon(Iconsax.crown5, color: AppColors.neonGold, size: 40),
+              ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+              
+              const SizedBox(height: 25),
+              const Text("CONFIRM UPGRADE", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              const SizedBox(height: 10),
+              Text(
+                "You are activating the ${widget.plan.name} features.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+              ),
+              
+              const SizedBox(height: 35),
+              
+              // Glassy Card Inside Bottom Sheet
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                ),
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(selectedPrice.cycle.toUpperCase(), style: const TextStyle(color: AppColors.neonGold, fontWeight: FontWeight.w900, fontSize: 18)),
+                        const Text("Billing Cycle", style: TextStyle(color: Colors.white38, fontSize: 11)),
+                      ],
+                    ),
+                    const Spacer(),
+                    Text("₹${selectedPrice.offerPrice ?? selectedPrice.price}", style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 40),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("NOT NOW", style: TextStyle(color: Colors.white54, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _handleUpgrade();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.neonGold,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text("PAY & UPGRADE", style: TextStyle(fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    if (mounted) {
-      if (success) {
+  void _handleUpgrade() async {
+    // if (_selectedPriceId == null) return;
+    // final userId = await AuthService().getUserId();
+    // final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+    // final selectedPrice = widget.plan.prices.firstWhere((p) => p.priceId == _selectedPriceId);
+
+    // HapticFeedback.heavyImpact();
+    // final success = await provider.upgradeUserPlan(userId.toString(), _selectedPriceId.toString());
+
+    // if (mounted) {
+    //   if (success) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => UpgradeSuccessPage(planName: widget.plan.name))
+          MaterialPageRoute(builder: (context) => UpgradeSuccessPage(
+            planName: widget.plan.name,
+            duration: 'Month',
+            price: '599',
+            bgImage: widget.image,
+          ))
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(provider.error),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          )
-        );
-      }
-    }
+    //   } else {
+    //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating));
+    //   }
+    // }
   }
 
   @override
@@ -66,19 +167,15 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: CachedNetworkImage(imageUrl: widget.image, fit: BoxFit.cover),
-          ),
+          Positioned.fill(child: CachedNetworkImage(imageUrl: widget.image, fit: BoxFit.cover)),
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.4, 0.9],
-                    colors: [Colors.black.withOpacity(0.6), Colors.black.withOpacity(0.4), Colors.black.withOpacity(0.9)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                    colors: [Colors.black.withOpacity(0.7), Colors.black.withOpacity(0.3), Colors.black.withOpacity(0.9)],
                   ),
                 ),
               ),
@@ -98,17 +195,11 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
                         const SizedBox(height: 20),
                         _buildMainHeader(),
                         const SizedBox(height: 40),
-                        _buildSectionLabel("SELECT A DURATION"),
+                        _buildSectionLabel("CHOOSE YOUR EXPERIENCE"),
                         const SizedBox(height: 16),
-                        
-                        if (widget.plan.prices.isEmpty)
-                        SizedBox()
-                          //  _buildEmptyPricePlaceholder()
-                        else
-                          ...widget.plan.prices.map((price) => _buildPricingCard(price)),
-                        
+                        ...widget.plan.prices.map((price) => _buildPricingCard(price)),
                         const SizedBox(height: 40),
-                        _buildSectionLabel("MEMBERSHIP BENEFITS"),
+                        _buildSectionLabel("MEMBERSHIP PERKS"),
                         const SizedBox(height: 16),
                         _buildFeaturesSection(),
                         const SizedBox(height: 140), 
@@ -127,15 +218,15 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(20.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildCircularGlassButton(
-            icon: Iconsax.arrow_left_2,
+          GestureDetector(
             onTap: () => Navigator.pop(context),
+            child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white10, shape: BoxShape.circle), child: const Icon(Iconsax.arrow_left_2, color: Colors.white, size: 20)),
           ),
-          const Text("PLAN DETAILS", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 3)),
+          const Text("UPGRADE STUDIO", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 3)),
           const SizedBox(width: 44),
         ],
       ),
@@ -146,14 +237,11 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.plan.name.toUpperCase(),
-          style: const TextStyle(color: AppColors.neonGold, fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: -1.5),
-        ),
-        const SizedBox(height: 8),
-        Text(widget.plan.subtitle, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(widget.plan.name.toUpperCase(), style: const TextStyle(color: AppColors.neonGold, fontSize: 45, fontWeight: FontWeight.w900, letterSpacing: -1.5)),
+        const SizedBox(height: 5),
+        Text(widget.plan.subtitle, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16)),
       ],
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1);
+    ).animate().fadeIn().slideX();
   }
 
   Widget _buildSectionLabel(String text) {
@@ -163,56 +251,32 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
   Widget _buildPricingCard(PriceModel price) {
     bool isSelected = _selectedPriceId == price.priceId;
     bool isActivePrice = widget.plan.isActive && widget.plan.activePriceId == price.priceId;
-    bool isFree = (price.offerPrice ?? price.price) == 0;
 
     return GestureDetector(
-      onTap: () {
-        if (!isActivePrice) setState(() => _selectedPriceId = price.priceId);
-      },
+      onTap: () { if (!isActivePrice) setState(() => _selectedPriceId = price.priceId); },
       child: AnimatedContainer(
         duration: 250.ms,
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected 
-                ? (isActivePrice ? Colors.green.withOpacity(0.6) : AppColors.neonGold)
-                : Colors.white.withOpacity(0.08),
-            width: isSelected ? 2 : 1,
-          ),
-          color: isSelected 
-              ? (isActivePrice ? Colors.green.withOpacity(0.05) : AppColors.neonGold.withOpacity(0.05))
-              : Colors.white.withOpacity(0.04),
+          border: Border.all(color: isSelected ? AppColors.neonGold : Colors.white10, width: isSelected ? 2 : 1),
+          color: isSelected ? AppColors.neonGold.withOpacity(0.1) : Colors.white.withOpacity(0.03),
         ),
         child: Row(
           children: [
-            Icon(
-              isSelected ? Iconsax.tick_circle5 : Iconsax.record,
-              color: isSelected ? (isActivePrice ? Colors.green : AppColors.neonGold) : Colors.white24,
-              size: 24,
-            ),
+            Icon(isSelected ? Iconsax.tick_circle5 : Iconsax.record, color: isSelected ? AppColors.neonGold : Colors.white24),
             const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    price.cycle.isEmpty ? "ACCESS" : price.cycle.toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isFree ? "Complimentary" : "₹${price.offerPrice ?? price.price} total",
-                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
-                  ),
+                  Text(price.cycle.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text("₹${price.offerPrice ?? price.price}", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
                 ],
               ),
             ),
-            if (isActivePrice)
-              _buildBadge("ACTIVE", Colors.green)
-            else if (price.discount != null && price.discount! > 0)
-              _buildBadge("-${price.discount}%", AppColors.neonGold),
+            if (isActivePrice) _buildBadge("ACTIVE", Colors.green)
           ],
         ),
       ),
@@ -222,7 +286,7 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
   Widget _buildBadge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withOpacity(0.3))),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withOpacity(0.2))),
       child: Text(text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900)),
     );
   }
@@ -230,67 +294,33 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
   Widget _buildFeaturesSection() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withOpacity(0.05))),
       child: Column(
-        children: widget.plan.features.isEmpty 
-          ? [const Text("Standard features included.", style: TextStyle(color: Colors.white54))]
-          : widget.plan.features.map((f) => Padding(
-            padding: const EdgeInsets.only(bottom: 18),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Iconsax.verify5, color: AppColors.neonGold, size: 20),
-                const SizedBox(width: 16),
-                Expanded(child: Text(f, style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.4))),
-              ],
-            ),
-          )).toList(),
+        children: widget.plan.features.map((f) => Padding(
+          padding: const EdgeInsets.only(bottom: 18),
+          child: Row(children: [const Icon(Iconsax.verify5, color: AppColors.neonGold, size: 20), const SizedBox(width: 16), Expanded(child: Text(f, style: const TextStyle(color: Colors.white, fontSize: 15)))]),
+        )).toList(),
       ),
     );
   }
 
   Widget _buildBottomActionSection() {
     final provider = context.watch<SubscriptionProvider>();
-    bool isCurrentSelectionActive = widget.plan.isActive && _selectedPriceId == widget.plan.activePriceId;
-
-    if (isCurrentSelectionActive) return const SizedBox();
-    
+    if (widget.plan.isActive && _selectedPriceId == widget.plan.activePriceId) return const SizedBox();
     return Positioned(
       bottom: 40, left: 24, right: 24,
       child: ElevatedButton(
-        onPressed: provider.isUpgrading ? null : _handleUpgrade,
+        onPressed: provider.isUpgrading ? null : _showConfirmationBottomSheet,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.neonGold,
           foregroundColor: Colors.black,
           minimumSize: const Size(double.infinity, 64),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          elevation: 0,
         ),
         child: provider.isUpgrading 
-          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5))
+          ? const CircularProgressIndicator(color: Colors.black)
           : const Text("Activate Membership", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-      ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds, color: Colors.white24),
-    );
-  }
-
-  Widget _buildCircularGlassButton({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(50),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.2))),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-        ),
-      ),
+      ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
     );
   }
 }

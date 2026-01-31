@@ -71,7 +71,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
       PageRouteBuilder(
         opaque: false,
         pageBuilder: (context, _, __) => FullScreenGallery(
-          photos: widget.profiledata.photos.isNotEmpty ? widget.profiledata.photos : [widget.profiledata.photo],
+          photos: widget.profiledata.photos.isNotEmpty ? widget.profiledata.photos :[],
           initialIndex: initialIndex,
         ),
       ),
@@ -468,7 +468,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
                 margin: const EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(28),
-                  image: DecorationImage(image: NetworkImage(photos[index]), fit: BoxFit.cover),
+                  image: DecorationImage(image: NetworkImage(photos[index].photoUrl), fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -509,7 +509,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
 // --- FULL SCREEN GALLERY ---
 
 class FullScreenGallery extends StatefulWidget {
-  final List<String> photos;
+  final List<Photo> photos;
   final int initialIndex;
   const FullScreenGallery({super.key, required this.photos, required this.initialIndex});
 
@@ -535,7 +535,7 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
           PageView.builder(
             controller: _pageController,
             itemCount: widget.photos.length,
-            itemBuilder: (context, index) => InteractiveViewer(child: Center(child: Image.network(widget.photos[index], fit: BoxFit.contain))),
+            itemBuilder: (context, index) => InteractiveViewer(child: Center(child: Image.network(widget.photos[index].photoUrl, fit: BoxFit.contain))),
           ),
           Positioned(
             top: 50, left: 20,

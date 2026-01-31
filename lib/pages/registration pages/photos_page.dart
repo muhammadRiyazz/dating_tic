@@ -869,6 +869,11 @@ class _PhotosPageState extends State<PhotosPage> {
         interests: widget.userdata.interests,
         photos: base64Images,
         mainPhotoUrl: mainPhotoUrl,
+        phoneNo: widget.userdata.phoneNo,
+        intrestgender: widget.userdata.intrestgender??'',
+        voiceEncryption: widget.userdata.voiceEncryption,
+        voiceEncryptionExtension: widget.userdata.voiceEncryptionExtension,
+        privatePhotos: []
       );
       
       // Handle notifications

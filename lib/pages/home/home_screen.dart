@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,8 +72,11 @@ class _WeekendHomeState extends State<WeekendHome> with TickerProviderStateMixin
   }
 
   Widget _buildHomeContent() {
+
+    log('_buildHomeContent -----');
     final homeProvider = context.watch<HomeProvider>();
     final bool hasData = homeProvider.categories.isNotEmpty;
+    log(hasData.toString());
 
     if (hasData) {
       _setupTabController(homeProvider.categories.length);

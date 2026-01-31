@@ -1,5 +1,6 @@
 import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
+import 'package:dating/pages/registration%20pages/Voice_Prompt_Page.dart';
 import 'package:dating/pages/registration%20pages/photos_page.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -441,7 +442,7 @@ class _BioPageState extends State<BioPage> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => PhotosPage(userdata: data,),
+        pageBuilder: (context, animation, secondaryAnimation) => VoicePromptPage(userdata: data,),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:dating/core/url.dart';
 import 'package:http/http.dart' as http;
 import '../models/permission_model.dart';
@@ -55,7 +56,7 @@ class PermissionService {
       }
       return null;
     } catch (e) {
-      print('Cache read error: $e');
+      log('Cache read error: $e');
       return null;
     }
   }

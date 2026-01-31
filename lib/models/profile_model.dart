@@ -1,6 +1,31 @@
 import 'dart:convert';
 import 'dart:developer';
 
+class ApiResponse {
+  final String status;
+  final int statusCode;
+  final String statusDesc;
+  final List<GoalProfile> data;
+
+  ApiResponse({
+    required this.status,
+    required this.statusCode,
+    required this.statusDesc,
+    required this.data,
+  });
+
+  factory ApiResponse.fromJson(Map<String, dynamic> json) {
+    return ApiResponse(
+      status: json['status'],
+      statusCode: json['statusCode'],
+      statusDesc: json['statusDesc'],
+      data: (json['data'] as List)
+          .map((e) => GoalProfile.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
 class GoalProfile {
   final int goalId;
   final String goalTitle;
@@ -54,15 +79,20 @@ class Profile {
   final Education education;
   final RelationshipGoal? relationshipGoal;
   final List<Interest> interests;
-  final String? latitude;
-  final String? longitude;
+  final String? city;
   final String? state;
   final String? country;
+  final String? latitude;
+  final String? longitude;
   final String? address;
   final String? bio;
-  final List<String> photos;
-  final String? city;
   final String photo;
+  final List<Photo> photos;
+  final List<Photo> privatePhotos;
+  final int privatePhotoCount;
+  final bool isBoosted;
+  final String? lastSeen;
+  final bool isLive;
 
   Profile({
     required this.userId,
@@ -78,37 +108,23 @@ class Profile {
     required this.education,
     this.relationshipGoal,
     required this.interests,
-    this.latitude,
-    this.longitude,
+    this.city,
     this.state,
     this.country,
+    this.latitude,
+    this.longitude,
     this.address,
     this.bio,
-    required this.photos,
-    required this.city,
     required this.photo,
+    required this.photos,
+    required this.privatePhotos,
+    required this.privatePhotoCount,
+    required this.isBoosted,
+    this.lastSeen,
+    required this.isLive,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
-    // Photos
-    List<String> photosList = [];
-    if (json['photos'] != null) {
-      try {
-        if (json['photos'] is String) {
-          final cleaned = json['photos'].replaceAll('\\', '');
-          if (cleaned.startsWith('[')) {
-            photosList =
-                (jsonDecode(cleaned) as List).map((e) => e.toString()).toList();
-          }
-        } else if (json['photos'] is List) {
-          photosList =
-              (json['photos'] as List).map((e) => e.toString()).toList();
-        }
-      } catch (e) {
-        log('Photo parse error: $e');
-      }
-    }
-
     return Profile(
       userId: json['userId'],
       userName: json['userName'],
@@ -119,29 +135,32 @@ class Profile {
       smokingHabit: json['smokingHabit'],
       drinkingHabit: json['drinkingHabit'],
       job: json['job'],
-      gender: json['gender'] != null
-          ? Gender.fromJson(json['gender'])
-          : Gender(id: 0, name: ''),
-      education: json['education'] != null
-          ? Education.fromJson(json['education'])
-          : Education(id: 0, name: ''),
+      gender: Gender.fromJson(json['gender']),
+      education: Education.fromJson(json['education']),
       relationshipGoal: json['relationshipGoal'] != null
           ? RelationshipGoal.fromJson(json['relationshipGoal'])
           : null,
-      interests: json['interests'] != null
-          ? (json['interests'] as List)
-              .map((e) => Interest.fromJson(e))
-              .toList()
-          : [],
-      latitude: json['latitude'],
-      longitude: json['longitude'],
+      interests: (json['interests'] as List)
+          .map((e) => Interest.fromJson(e))
+          .toList(),
+      city: json['city'],
       state: json['state'],
       country: json['country'],
+      latitude: json['latitude'],
+      longitude: json['longitude'],
       address: json['address'],
       bio: json['bio'],
-      photos: photosList,
-      city: json['city'],
-      photo: json['photo'],
+      photo: json['mainPhoto'] ?? '',
+      photos: (json['photos'] as List)
+          .map((e) => Photo.fromJson(e))
+          .toList(),
+      privatePhotos: (json['privatePhotos'] as List)
+          .map((e) => Photo.fromJson(e))
+          .toList(),
+      privatePhotoCount: json['privatePhotoCount'] ?? 0,
+      isBoosted: json['isBoosted'] ?? false,
+      lastSeen: json['last_seen'] ?? json['lastSeen'],
+      isLive: json['is_live'] == "1" || json['is_live'] == true || json['isLive'] == "1" || json['isLive'] == true,
     );
   }
 
@@ -159,15 +178,20 @@ class Profile {
     Education? education,
     RelationshipGoal? relationshipGoal,
     List<Interest>? interests,
-    String? latitude,
-    String? longitude,
+    String? city,
     String? state,
     String? country,
+    String? latitude,
+    String? longitude,
     String? address,
     String? bio,
-    List<String>? photos,
-    String? city,
     String? photo,
+    List<Photo>? photos,
+    List<Photo>? privatePhotos,
+    int? privatePhotoCount,
+    bool? isBoosted,
+    String? lastSeen,
+    bool? isLive,
   }) {
     return Profile(
       userId: userId ?? this.userId,
@@ -183,46 +207,113 @@ class Profile {
       education: education ?? this.education,
       relationshipGoal: relationshipGoal ?? this.relationshipGoal,
       interests: interests ?? this.interests,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
+      city: city ?? this.city,
       state: state ?? this.state,
       country: country ?? this.country,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       address: address ?? this.address,
       bio: bio ?? this.bio,
-      photos: photos ?? this.photos,
-      city: city ?? this.city,
       photo: photo ?? this.photo,
+      photos: photos ?? this.photos,
+      privatePhotos: privatePhotos ?? this.privatePhotos,
+      privatePhotoCount: privatePhotoCount ?? this.privatePhotoCount,
+      isBoosted: isBoosted ?? this.isBoosted,
+      lastSeen: lastSeen ?? this.lastSeen,
+      isLive: isLive ?? this.isLive,
     );
   }
+
   factory Profile.empty() {
-  return Profile(
-    userId: 0,
-    userName: '',
-    phno: null,
-    countryCode: null,
-    dateOfBirth: null,
-    height: null,
-    smokingHabit: null,
-    drinkingHabit: null,
-    job: null,
-    gender: Gender(id: 0, name: ''),
-    education: Education(id: 0, name: ''),
-    relationshipGoal: null,
-    interests: [],
-    latitude: null,
-    longitude: null,
-    state: null,
-    country: null,
-    address: null,
-    bio: null,
-    photos: [],
-    city: null,
-    photo: '',
-  );
+    return Profile(
+      userId: 0,
+      userName: '',
+      phno: null,
+      countryCode: null,
+      dateOfBirth: null,
+      height: null,
+      smokingHabit: null,
+      drinkingHabit: null,
+      job: null,
+      gender: Gender.empty(),
+      education: Education.empty(),
+      relationshipGoal: null,
+      interests: [],
+      city: null,
+      state: null,
+      country: null,
+      latitude: null,
+      longitude: null,
+      address: null,
+      bio: null,
+      photo: '',
+      photos: [],
+      privatePhotos: [],
+      privatePhotoCount: 0,
+      isBoosted: false,
+      lastSeen: null,
+      isLive: false,
+    );
+  }
 }
 
+/// =======================
+/// LOCATION (Kept for backward compatibility)
+/// =======================
+class Location {
+  final String latitude;
+  final String longitude;
+  final String city;
+  final String state;
+  final String country;
+  final String address;
+
+  Location({
+    required this.latitude,
+    required this.longitude,
+    required this.city,
+    required this.state,
+    required this.country,
+    required this.address,
+  });
+
+  factory Location.fromJson(Map<String, dynamic> json) {
+    return Location(
+      latitude: json['latitude'],
+      longitude: json['longitude'],
+      city: json['city'],
+      state: json['state'],
+      country: json['country'],
+      address: json['address'],
+    );
+  }
 }
 
+/// =======================
+/// PHOTO
+/// =======================
+class Photo {
+  final String id;
+  final String photoUrl;
+
+  Photo({
+    required this.id,
+    required this.photoUrl,
+  });
+
+  factory Photo.fromJson(Map<String, dynamic> json) {
+    return Photo(
+      id: json['id']?.toString() ?? '',
+      photoUrl: (json['photo_url'] ?? json['photoUrl'] ?? '')
+          .toString()
+          .replaceAll('\\', ''),
+    );
+  }
+}
+
+/// =======================
+/// GENDER
+/// =======================
 class Gender {
   final int id;
   final String name;
@@ -230,8 +321,13 @@ class Gender {
   Gender({required this.id, required this.name});
 
   factory Gender.fromJson(Map<String, dynamic> json) {
-    return Gender(id: json['id'], name: json['name']);
+    return Gender(
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? '',
+    );
   }
+
+  factory Gender.empty() => Gender(id: 0, name: '');
 
   Gender copyWith({int? id, String? name}) {
     return Gender(
@@ -241,6 +337,9 @@ class Gender {
   }
 }
 
+/// =======================
+/// EDUCATION
+/// =======================
 class Education {
   final int id;
   final String name;
@@ -248,9 +347,13 @@ class Education {
   Education({required this.id, required this.name});
 
   factory Education.fromJson(Map<String, dynamic> json) {
-    return Education(id: json['id'], name: json['name']);
+    return Education(
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? '',
+    );
   }
 
+  factory Education.empty() => Education(id: 0, name: '');
 
   Education copyWith({int? id, String? name}) {
     return Education(
@@ -260,18 +363,25 @@ class Education {
   }
 }
 
+/// =======================
+/// INTEREST
+/// =======================
 class Interest {
   final int id;
   final String name;
   final String emoji;
 
-  Interest({required this.id, required this.name, required this.emoji});
+  Interest({
+    required this.id,
+    required this.name,
+    required this.emoji,
+  });
 
   factory Interest.fromJson(Map<String, dynamic> json) {
     return Interest(
-      id: json['id'],
-      name: json['name'],
-      emoji: json['emoji'] ?? '',
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? '',
+      emoji: json['emoji']?.toString() ?? '',
     );
   }
 
@@ -284,6 +394,9 @@ class Interest {
   }
 }
 
+/// =======================
+/// RELATIONSHIP GOAL
+/// =======================
 class RelationshipGoal {
   final int id;
   final String name;
@@ -297,9 +410,9 @@ class RelationshipGoal {
 
   factory RelationshipGoal.fromJson(Map<String, dynamic> json) {
     return RelationshipGoal(
-      id: json['id'],
-      name: json['name'],
-      emoji: json['emoji'] ?? '',
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? '',
+      emoji: json['emoji']?.toString() ?? '',
     );
   }
 
@@ -310,44 +423,4 @@ class RelationshipGoal {
       emoji: emoji ?? this.emoji,
     );
   }
-}
-
-class ProfileResponse {
-  final String status;
-  final int statusCode;
-  final String statusDesc;
-  final List<GoalProfile> data;
-
-  ProfileResponse({
-    required this.status,
-    required this.statusCode,
-    required this.statusDesc,
-    required this.data,
-  });
-
-  factory ProfileResponse.fromJson(Map<String, dynamic> json) {
-    return ProfileResponse(
-      status: json['status'],
-      statusCode: json['statusCode'],
-      statusDesc: json['statusDesc'],
-      data: (json['data'] as List)
-          .map((e) => GoalProfile.fromJson(e))
-          .toList(),
-    );
-  }
-
-  ProfileResponse copyWith({
-    String? status,
-    int? statusCode,
-    String? statusDesc,
-    List<GoalProfile>? data,
-  }) {
-    return ProfileResponse(
-      status: status ?? this.status,
-      statusCode: statusCode ?? this.statusCode,
-      statusDesc: statusDesc ?? this.statusDesc,
-      data: data ?? this.data,
-    );
-  }
-  
 }

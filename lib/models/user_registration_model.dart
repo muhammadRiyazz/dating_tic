@@ -1,8 +1,16 @@
 class UserRegistrationModel {
   final String? userRegId;
   final String? userName;
+    final String? phoneNo;
+
   final String? dateOfBirth;
   final String? gender;
+    final String? intrestgender;
+
+
+  final String? voiceEncryptionExtension;
+  final String? voiceEncryption;
+
   final double? height;
   final String? smokingHabit;
   final String? drinkingHabit;
@@ -17,12 +25,19 @@ class UserRegistrationModel {
   final String? address;
   final String? bio;
   final List<String>? photos;
+    final List<String>? privatePhotos;
+
   final List<String>? interests;
   final String? mainPhotoUrl;
 
   const UserRegistrationModel({
+    this.voiceEncryption,
+    this.voiceEncryptionExtension,
+    this.intrestgender,
     this.userName,
+    this.privatePhotos,
     this.interests,
+    this.phoneNo,
     this.userRegId,
     this.dateOfBirth,
     this.gender,
@@ -44,10 +59,14 @@ class UserRegistrationModel {
   });
 
   UserRegistrationModel copyWith({
+        String? voiceEncryptionExtension,
+    String? voiceEncryption,
     List<String>? interests,
     String? userName,
     String? userRegId,
     String? dateOfBirth,
+   String?  intrestgender,
+ List<String>? privatePhotos,
     String? gender,
     double? height,
     String? smokingHabit,
@@ -60,12 +79,18 @@ class UserRegistrationModel {
     String? city,
     String? state,
     String? country,
+    String ? phoneNo,
     String? address,
     String? bio,
     List<String>? photos,
     String? mainPhotoUrl,
   }) {
     return UserRegistrationModel(
+      voiceEncryption: voiceEncryption??voiceEncryption,
+      voiceEncryptionExtension: voiceEncryptionExtension??voiceEncryptionExtension,
+      intrestgender:intrestgender??intrestgender,
+      phoneNo: phoneNo??this.phoneNo,
+      privatePhotos: privatePhotos??this.privatePhotos,
       interests: interests??this.interests,
       userName: userName ?? this.userName,
       userRegId: userRegId ?? this.userRegId,
@@ -117,6 +142,7 @@ class UserRegistrationModel {
   // Alternative: Include null values in JSON (uncomment if needed)
   Map<String, dynamic> toJson() {
     return {
+
       'interests':interests,
       'userRegId': userRegId,
       'user_name': userName,

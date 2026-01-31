@@ -119,24 +119,24 @@ class NearbyCard extends StatelessWidget {
                   child: PulseAnimationSmall(),
                 ),
                 // Distance Badge
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Iconsax.location, color: AppColors.neonGold, size: 10),
-                        const SizedBox(width: 4),
-                        Text(profile.latitude??'', style: const TextStyle(color: Colors.white, fontSize: 10)),
-                      ],
-                    ),
-                  ),
-                ),
+                // Positioned(
+                //   top: 10,
+                //   left: 10,
+                //   child: Container(
+                //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                //     decoration: BoxDecoration(
+                //       color: Colors.black.withOpacity(0.6),
+                //       borderRadius: BorderRadius.circular(10),
+                //     ),
+                //     child: Row(
+                //       children: [
+                //         Icon(Iconsax.location, color: AppColors.neonGold, size: 10),
+                //         const SizedBox(width: 4),
+                //         Text(profile.location.latitude??'', style: const TextStyle(color: Colors.white, fontSize: 10)),
+                //       ],
+                //     ),
+                //   ),
+                // ),
                 // Online Indicator
                 // if (profile.isOnline)
                 //   Positioned(

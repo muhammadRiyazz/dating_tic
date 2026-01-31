@@ -100,10 +100,10 @@ class CallGirlCard extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            profile.latitude??'',
-                            style: const TextStyle(color: AppColors.neonGold, fontSize: 14, fontWeight: FontWeight.bold),
-                          ),
+                          // Text(
+                          //   profile.latitude??'',
+                          //   style: const TextStyle(color: AppColors.neonGold, fontSize: 14, fontWeight: FontWeight.bold),
+                          // ),
                         ],
                       ),
                     ),
