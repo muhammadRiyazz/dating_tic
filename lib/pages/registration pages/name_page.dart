@@ -116,15 +116,15 @@ class NamePage extends StatelessWidget {
                       height: 56,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: AppColors.neonGold.withOpacity(0.3),
-                          width: 1.5,
+                          color: AppColors.neonGold.withOpacity(0.2),
+                          width: .5,
                         ),
                         borderRadius: BorderRadius.circular(12),
                         color: Colors.black.withOpacity(0.3),
                       ),
                       child: TextField(
                         controller: nameController,
-                        autofocus: true,
+                        // autofocus: true,
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.white,

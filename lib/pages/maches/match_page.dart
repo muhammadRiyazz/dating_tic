@@ -285,30 +285,30 @@ onTap: () {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Flexible(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.white10),
-                                  ),
-                                  child: Text(
-                                    "${profile.relationshipGoal?.emoji ?? "✨"} Match",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          // Flexible(
+                          //   child: ClipRRect(
+                          //     borderRadius: BorderRadius.circular(10),
+                          //     child: BackdropFilter(
+                          //       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                          //       child: Container(
+                          //         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          //         decoration: BoxDecoration(
+                          //           color: Colors.white.withOpacity(0.1),
+                          //           borderRadius: BorderRadius.circular(10),
+                          //           border: Border.all(color: Colors.white10),
+                          //         ),
+                          //         child: Text(
+                          //           "${profile.relationshipGoal?.emoji ?? "✨"} Match",
+                          //           style: const TextStyle(
+                          //             color: Colors.white,
+                          //             fontSize: 9,
+                          //             fontWeight: FontWeight.bold,
+                          //           ),
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
                           Container(
                             height: 36,
                             width: 36,
@@ -398,7 +398,7 @@ onTap: () {
                 ),
               ],
             ),
-            _glassButton(Iconsax.setting_4),
+            _glassButton(Iconsax.lovely),
           ],
         ),
       ),

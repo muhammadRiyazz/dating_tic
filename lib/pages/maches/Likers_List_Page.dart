@@ -628,9 +628,11 @@ import 'package:dating/main.dart';
 import 'package:dating/models/profile_model.dart';
 import 'package:dating/pages/maches/widgets/likers_shimmer.dart';
 import 'package:dating/pages/maches/widgets/video_style_card.dart';
+import 'package:dating/pages/user_profile_page.dart';
 import 'package:dating/providers/likers_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
@@ -711,7 +713,7 @@ class _LikersListPageState extends State<LikersListPage> {
 
   Widget _buildLikersCarousel(LikersProvider provider) {
     return SizedBox(
-      height: 500,
+      height: 480,
       child: PageView.builder(
         controller: _pageController,
         itemCount: provider.likers.length,
@@ -725,7 +727,15 @@ class _LikersListPageState extends State<LikersListPage> {
             scale: scale,
             child: Opacity(
               opacity: opacity,
-              child: VideoStyleCard(profile: provider.likers[index]),
+              child: InkWell(
+                onTap: () {
+                   HapticFeedback.lightImpact();
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return ProfileDetailsPage(profiledata: provider.likers[index],goalName:provider.likers[index].relationshipGoal!.name,match: true,);
+          },));
+                },
+                
+                child: VideoStyleCard(profile: provider.likers[index])),
             ),
           );
         },

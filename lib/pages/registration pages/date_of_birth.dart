@@ -287,7 +287,7 @@ Future<void> _pickDate() async {
                 width: 1,
               ),
             ),
-            shadowColor: AppColors.neonGold.withOpacity(0.2),
+            // shadowColor: AppColors.neonGold.withOpacity(0.2),
           ),
           textTheme: TextTheme(
             titleLarge: TextStyle(
@@ -329,7 +329,7 @@ Future<void> _pickDate() async {
                 fontSize: 16,
               ),
               elevation: 3,
-              shadowColor: AppColors.neonGold.withOpacity(0.5),
+              // shadowColor: AppColors.neonGold.withOpacity(0.5),
             ),
           ),
           inputDecorationTheme: InputDecorationTheme(
@@ -373,18 +373,18 @@ Future<void> _pickDate() async {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 30,
-                spreadRadius: 5,
-              ),
-              BoxShadow(
-                color: AppColors.neonGold.withOpacity(0.1),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-            ],
+            // boxShadow: [
+            //   BoxShadow(
+            //     color: Colors.black.withOpacity(0.5),
+            //     blurRadius: 30,
+            //     spreadRadius: 5,
+            //   ),
+            //   BoxShadow(
+            //     color: AppColors.neonGold.withOpacity(0.1),
+            //     blurRadius: 20,
+            //     spreadRadius: 2,
+            //   ),
+            // ],
           ),
           child:  child!,
         ),

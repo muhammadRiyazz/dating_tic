@@ -53,7 +53,7 @@ class _RelationshipGoalsPageState extends State<RelationshipGoalsPage> {
     final updatedData = widget.userdata.copyWith(
       relationshipGoal: provider.selectedGoalId,
     );
-
+log(updatedData.intrestgender.toString());
     Navigator.push(
       context,
       PageRouteBuilder(

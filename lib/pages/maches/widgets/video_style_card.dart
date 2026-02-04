@@ -176,13 +176,17 @@ class _VideoStyleCardState extends State<VideoStyleCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text("${widget.profile.userName}, $age",
-                            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                        const SizedBox(width: 8),
-                        const Icon(Iconsax.verify5, color: Colors.blueAccent, size: 22),
-                      ],
+                    // FIXED: Name and age now allow 2 lines to prevent overflow
+                    Text(
+                      "${widget.profile.userName}, $age",
+                      maxLines: 2,
+                      softWrap: true,
+                      style: const TextStyle(
+                        color: Colors.white, 
+                        fontSize: 26, 
+                        fontWeight: FontWeight.w900, 
+                        letterSpacing: -0.5,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(widget.profile.job ?? "Elite Member",

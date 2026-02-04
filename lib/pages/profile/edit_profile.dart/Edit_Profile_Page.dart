@@ -16,7 +16,7 @@ import 'package:dating/providers/my_profile_provider.dart';
 import 'package:dating/providers/profile_update.dart';
 import 'package:dating/providers/registration_data_provider.dart';
 import 'package:dating/services/auth_service.dart';
-import 'package:dating/services/notification_service.dart';
+import 'package:dating/services/notification/notification_service.dart';
 import 'package:dating/services/registration_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';

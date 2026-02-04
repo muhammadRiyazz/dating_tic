@@ -1,4 +1,6 @@
 // lib/pages/registration/looking_for_page.dart
+import 'dart:developer';
+
 import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/registration%20pages/HeightPage.dart';
@@ -17,13 +19,10 @@ class LookingForPage extends StatefulWidget {
   _LookingForPageState createState() => _LookingForPageState();
 }
 
-
-
-
 class _LookingForPageState extends State<LookingForPage> {
-  // Premium Avatar URLs (Matching your previous design)
-  final String maleAvatarUrl = "https://cdn3d.iconscout.com/3d/premium/thumb/man-avatar-6299535-5187871.png";
-  final String femaleAvatarUrl = "https://cdn3d.iconscout.com/3d/premium/thumb/woman-avatar-6299533-5187869.png";
+  // Premium Avatar URLs (Matching your gender_page design)
+  final String maleAvatarUrl = "assets/image/boy.png";
+  final String femaleAvatarUrl = "assets/image/girl.png";
 
   @override
   void initState() {
@@ -49,16 +48,18 @@ class _LookingForPageState extends State<LookingForPage> {
       );
       return;
     }
-
-    // Update userdata with lookingFor preference
-    final data = widget.userdata.copyWith(
-      // Ensure your model has lookingFor field or update accordingly
-      intrestgender: provider.selectedLookingForId 
+    
+    final updatedData = widget.userdata.copyWith(
+      intrestgender: provider.selectedLookingForId, // Fixed: use selectedLookingForId instead of selectedGenderId
     );
+    
+    log('Looking for selection:');
+    log('Selected lookingForId: ${provider.selectedLookingForId.toString()}');
+    log('Updated userdata intrestgender: ${updatedData.intrestgender.toString()}');
 
     Navigator.push(
       context, 
-      MaterialPageRoute(builder: (context) => RelationshipGoalsPage(userdata: data))
+      MaterialPageRoute(builder: (context) => RelationshipGoalsPage(userdata: updatedData))
     );
   }
 
@@ -156,7 +157,7 @@ class _LookingForPageState extends State<LookingForPage> {
   }
 
   Widget _buildAvatarBox(dynamic gender, String imageUrl, RegistrationDataProvider provider) {
-    // Logic changed to use selectedLookingForId
+    // Use selectedLookingForId for selection logic
     final isSelected = provider.selectedLookingForId == gender['genderId'].toString();
     
     return GestureDetector(
@@ -166,15 +167,11 @@ class _LookingForPageState extends State<LookingForPage> {
         height: 200,
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.neonGold : AppColors.cardBlack.withOpacity(0.6),
+          color: AppColors.cardBlack.withOpacity(0.6),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isSelected ? AppColors.neonGold : Colors.white.withOpacity(0.08),
-            width: 2,
-          ),
           boxShadow: isSelected ? [
             BoxShadow(
-              color: AppColors.neonGold.withOpacity(0.15),
+              color: AppColors.neonGold.withOpacity(0.05),
               blurRadius: 20,
               offset: const Offset(0, 8),
             )
@@ -193,12 +190,12 @@ class _LookingForPageState extends State<LookingForPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? Colors.black : Colors.white24,
+                      color: isSelected ? Colors.yellow : Colors.white24,
                       width: 2,
                     ),
                   ),
                   child: isSelected 
-                      ? const Center(child: Icon(Icons.circle, size: 12, color: Colors.black)) 
+                      ? const Center(child: Icon(Icons.circle, size: 12, color: Colors.yellow)) 
                       : null,
                 ),
               ),
@@ -206,7 +203,7 @@ class _LookingForPageState extends State<LookingForPage> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(10),
-                child: Image.network(
+                child: Image.asset(
                   imageUrl,
                   fit: BoxFit.contain,
                 ),
@@ -215,8 +212,8 @@ class _LookingForPageState extends State<LookingForPage> {
             Text(
               gender['genderTitle']?.toString().toUpperCase() ?? '',
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.white,
-                fontSize: 14,
+                color: Colors.white,
+                fontSize: 12,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1,
               ),
@@ -229,7 +226,7 @@ class _LookingForPageState extends State<LookingForPage> {
   }
 
   Widget _buildSecondaryListTile(dynamic gender, RegistrationDataProvider provider) {
-    // Logic changed to use selectedLookingForId
+    // Use selectedLookingForId for selection logic
     final isSelected = provider.selectedLookingForId == gender['genderId'].toString();
 
     return Padding(
@@ -245,8 +242,6 @@ class _LookingForPageState extends State<LookingForPage> {
           ),
           child: Row(
             children: [
-              Text(gender['genderEmoji'] ?? '✨', style: const TextStyle(fontSize: 18)),
-              const SizedBox(width: 15),
               Expanded(
                 child: Text(
                   gender['genderTitle'] ?? '',
@@ -285,12 +280,12 @@ class _LookingForPageState extends State<LookingForPage> {
         ),
         const SizedBox(height: 30),
         const Text(
-          'Who do you want to meet?', // UPDATED TITLE
+          'Who do you want to meet?',
           style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
         ),
         const SizedBox(height: 8),
         Text(
-          'Choose who you’d like to see on your feed.', // UPDATED SUBTITLE
+          'Choose who you\'d like to see on your feed.',
           style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
         ),
       ],
@@ -305,11 +300,11 @@ class _LookingForPageState extends State<LookingForPage> {
         color: Colors.white.withOpacity(0.03),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Iconsax.heart_tick, color: AppColors.neonGold, size: 18),
-          SizedBox(width: 12),
-          Expanded(
+          Icon(Iconsax.heart_tick, color: AppColors.neonGold.withOpacity(0.5), size: 18),
+          const SizedBox(width: 12),
+          const Expanded(
             child: Text(
               'We will use this preference to show you the best matches.',
               style: TextStyle(color: Colors.white38, fontSize: 11),

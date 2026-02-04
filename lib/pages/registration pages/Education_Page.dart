@@ -1,16 +1,14 @@
-// lib/pages/registration/work_education_page.dart
 import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/registration%20pages/location_Page.dart';
 import 'package:dating/providers/registration_data_provider.dart';
-import 'package:dating/widgets/shimmer_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 
 class WorkEducationPage extends StatefulWidget {
   const WorkEducationPage({
-       super.key,
+    super.key,
     required this.userdata,
   });
 
@@ -22,16 +20,21 @@ class WorkEducationPage extends StatefulWidget {
 
 class _WorkEducationPageState extends State<WorkEducationPage> {
   final TextEditingController _jobController = TextEditingController();
+  final FocusNode _jobFocusNode = FocusNode();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Load education levels when page initializes
+    _jobFocusNode.addListener(() => setState(() {}));
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<RegistrationDataProvider>();
       if (provider.educationStatus == DataLoadStatus.initial) {
         provider.loadEducationLevels();
+      }
+      if (provider.jobTitle != null) {
+        _jobController.text = provider.jobTitle!;
       }
     });
   }
@@ -39,42 +42,58 @@ class _WorkEducationPageState extends State<WorkEducationPage> {
   @override
   void dispose() {
     _jobController.dispose();
+    _jobFocusNode.dispose();
     super.dispose();
   }
 
- // Fix in WorkEducationPage (_continue method)
-void _continue() async {
-  final provider = context.read<RegistrationDataProvider>();
-  
-  setState(() => _isLoading = true);
-  await Future.delayed(const Duration(milliseconds: 500));
-  setState(() => _isLoading = false);
-  
-  // Create updated data with job and education
-  final UserRegistrationModel data = widget.userdata.copyWith(
-    job: provider.jobTitle,
-    education: provider.selectedEducationId,
-  );
+  // VALIDATION & NAVIGATION
+  void _continue() async {
+    final provider = context.read<RegistrationDataProvider>();
+    
+    // Check if fields are empty
+    final bool isJobEmpty = _jobController.text.trim().isEmpty;
+    final bool isEduEmpty = provider.selectedEducationId == null;
 
-  Navigator.push(
-    context,
-    PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => LocationRegistrationPage(
-        userdata: data, // Pass the data!
+    if (isJobEmpty || isEduEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isJobEmpty && isEduEmpty 
+                ? 'Please fill in all required fields' 
+                : (isJobEmpty ? 'Please enter your job title' : 'Please select your education'),
+            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: AppColors.neonGold,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(20),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    await Future.delayed(const Duration(milliseconds: 600));
+    setState(() => _isLoading = false);
+    
+    final UserRegistrationModel data = widget.userdata.copyWith(
+      job: _jobController.text.trim(),
+      education: provider.selectedEducationId,
+    );
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => LocationRegistrationPage(userdata: data),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(Tween(begin: const Offset(1, 0), end: Offset.zero).chain(CurveTween(curve: Curves.easeInOut))),
+            child: child,
+          );
+        },
       ),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(1.0, 0.0);
-        const end = Offset.zero;
-        const curve = Curves.easeInOut;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
-      },
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,23 +104,19 @@ void _continue() async {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              AppColors.neonGold.withOpacity(0.1),
-              Colors.transparent,
-            ],
+            colors: [AppColors.neonGold.withOpacity(0.1), Colors.transparent],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 25),
-
-                // Back button
+                // HEADER (UNCHANGED)
                 Row(
                   children: [
                     GestureDetector(
@@ -113,458 +128,155 @@ void _continue() async {
                           color: AppColors.neonGold.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          Iconsax.arrow_left_2,
-                          color: AppColors.neonGold,
-                          size: 24,
-                        ),
+                        child: Icon(Iconsax.arrow_left_2, color: AppColors.neonGold, size: 24),
                       ),
                     ),
                     const Spacer(),
                   ],
                 ),
                 const SizedBox(height: 20),
-
-                // Title with gradient
                 ShaderMask(
-                  shaderCallback: (bounds) {
-                    return LinearGradient(
-                      colors: [
-                        Colors.white,
-                        AppColors.neonGold,
-                      ],
-                      stops: const [0.4, 1.0],
-                    ).createShader(bounds);
-                  },
-                  child: Text(
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [Colors.white, AppColors.neonGold],
+                    stops: const [0.4, 1.0],
+                  ).createShader(bounds),
+                  child: const Text(
                     'Work & Education',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      // fontStyle: FontStyle.italic,
-                      height: 1.1,
-                      letterSpacing: -0.5,
-                    ),
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, height: 1.1, letterSpacing: -0.5),
                   ),
                 ),
                 const SizedBox(height: 8),
-
-                // Description
                 Text(
-                  'Tell us about your career and education (optional)',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade400,
-                    height: 1.5,
-                  ),
+                  'Build your professional profile',
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade400, height: 1.5),
                 ),
 
                 Expanded(
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 40),
 
-                        // Job Title section
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 24),
-                          padding: const EdgeInsets.all(16),
+                        // JOB TITLE INPUT
+                        _buildLabel("Job Title"),
+                        const SizedBox(height: 12),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.cardBlack.withOpacity(0.8),
-                                AppColors.cardBlack.withOpacity(0.4),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.05),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.neonGold.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Iconsax.briefcase,
-                                      color: AppColors.neonGold,
-                                      size: 18,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Job Title',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Container(
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const SizedBox(width: 16),
-                                    Icon(
-                                      Iconsax.briefcase,
-                                      color: AppColors.neonGold,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _jobController,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        decoration: InputDecoration(
-                                          hintText: 'e.g., Software Engineer',
-                                          hintStyle: TextStyle(
-                                            color: Colors.grey.shade500,
-                                            fontSize: 14,
-                                          ),
-                                          border: InputBorder.none,
-                                        ),
-                                        onChanged: (value) {
-                                          provider.jobTitle = value.trim();
-                                        },
-                                      ),
-                                    ),
-                                    if (_jobController.text.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(right: 12),
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            _jobController.clear();
-                                            provider.jobTitle = null;
-                                            setState(() {});
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.all(6),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black.withOpacity(0.4),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Iconsax.close_circle,
-                                              color: Colors.grey.shade400,
-                                              size: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Education section
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 24),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.cardBlack.withOpacity(0.8),
-                                AppColors.cardBlack.withOpacity(0.4),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.05),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.neonGold.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Iconsax.book_1,
-                                      color: AppColors.neonGold,
-                                      size: 18,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Highest Education',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-
-                              // Error message
-                              if (provider.educationHasError)
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.red.withOpacity(0.3)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Iconsax.warning_2, color: Colors.red, size: 14),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          provider.educationError ?? 'Failed to load education levels',
-                                          style: TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              // Loading state
-                              if (provider.educationLoading)
-                                Container(
-                                  height: 56,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: ShimmerLoading(
-                                    isLoading: true,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                              // Education dropdown
-                              if (provider.educationLoaded || provider.educationIsEmpty)
-                                Container(
-                                  height: 56,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: provider.selectedEducationId,
-                                      isExpanded: true,
-                                      icon: Padding(
-                                        padding: const EdgeInsets.only(right: 16),
-                                        child: Icon(
-                                          Iconsax.arrow_down_1,
-                                          color: AppColors.neonGold,
-                                          size: 16,
-                                        ),
-                                      ),
-                                      hint: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Iconsax.book_1,
-                                              color: AppColors.neonGold.withOpacity(0.8),
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              provider.educationIsEmpty
-                                                  ? 'No education levels available'
-                                                  : 'Select education level',
-                                              style: TextStyle(
-                                                color: Colors.grey.shade500,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      items: provider.educationLevels.map((option) {
-                                        return DropdownMenuItem<String>(
-                                          value: option['eduId'].toString(),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                                            child: Text(
-                                              option['eduTitle'] ?? 'Unknown',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                      onChanged: provider.educationIsEmpty
-                                          ? null
-                                          : (value) {
-                                              provider.selectEducation(value!);
-                                            },
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-
-                        // Info card
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.neonGold.withOpacity(0.08),
-                                AppColors.neonGold.withOpacity(0.02),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                            color: AppColors.cardBlack.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: AppColors.neonGold.withOpacity(0.15),
-                              width: 1,
+                              color: _jobFocusNode.hasFocus ? AppColors.neonGold : Colors.white.withOpacity(0.1),
+                              width: 1.5,
+                            ),
+                            boxShadow: _jobFocusNode.hasFocus 
+                              ? [BoxShadow(color: AppColors.neonGold.withOpacity(0.1), blurRadius: 10)]
+                              : [],
+                          ),
+                          child: TextField(
+                            controller: _jobController,
+                            // focusNode: _jobFocusNode,
+                            style: const TextStyle(color: Colors.white, fontSize: 16),
+                            decoration: InputDecoration(
+                              hintText: "e.g. Creative Designer",
+                              hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                              border: InputBorder.none,
+                              prefixIcon: Icon(Iconsax.briefcase, color: _jobFocusNode.hasFocus ? AppColors.neonGold : Colors.grey, size: 20),
                             ),
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.neonGold.withOpacity(0.1),
-                                  shape: BoxShape.circle,
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // EDUCATION SELECTION
+                        _buildLabel("Highest Education"),
+                        const SizedBox(height: 12),
+                        provider.educationLoading 
+                        ? const Center(child: CircularProgressIndicator(color: AppColors.neonGold))
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBlack.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: provider.selectedEducationId,
+                                isExpanded: true,
+                                dropdownColor: AppColors.cardBlack,
+                                icon: Padding(
+                                  padding: const EdgeInsets.only(right: 15),
+                                  child: Icon(Iconsax.arrow_down_1, color: AppColors.neonGold, size: 20),
                                 ),
-                                child: Icon(
-                                  Iconsax.info_circle,
-                                  color: AppColors.neonGold,
-                                  size: 14,
+                                hint: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  child: Text("Select your level", style: TextStyle(color: Colors.grey, fontSize: 14)),
                                 ),
+                                items: provider.educationLevels.map((edu) {
+                                  return DropdownMenuItem<String>(
+                                    value: edu['eduId'].toString(),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      child: Text(edu['eduTitle'], style: const TextStyle(color: Colors.white, fontSize: 15)),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (val) => provider.selectEducation(val!),
                               ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 40),
+
+                        // INFO BOX
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.neonGold.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.neonGold.withOpacity(0.1)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Iconsax.verify, color: AppColors.neonGold, size: 20),
                               const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Optional Information',
-                                      style: TextStyle(
-                                        color: AppColors.neonGold,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'This information is optional but helps with better matches and compatibility',
-                                      style: TextStyle(
-                                        color: AppColors.neonGold.withOpacity(0.8),
-                                        fontSize: 10,
-                                        height: 1.4,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ],
+                              const Expanded(
+                                child: Text(
+                                  'Verifying your career helps build trust within the community.',
+                                  style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
                                 ),
                               ),
                             ],
                           ),
                         ),
-
-                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
                 ),
 
-                // Continue button
+                // CONTINUE BUTTON
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 58,
                   child: ElevatedButton(
-                    onPressed: !_isLoading ? _continue : null,
+                    onPressed: _isLoading ? null : _continue,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.neonGold,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       elevation: 0,
-                      shadowColor: Colors.transparent,
-                    ).copyWith(
-                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                        (Set<MaterialState> states) {
-                          if (states.contains(MaterialState.disabled)) {
-                            return AppColors.neonGold.withOpacity(0.5);
-                          }
-                          return AppColors.neonGold;
-                        },
-                      ),
                     ),
                     child: _isLoading
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: Colors.black,
-                            ),
-                          )
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.black))
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Continue',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.black,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Icon(
-                                Iconsax.arrow_right_3,
-                                size: 20,
-                                color: Colors.black,
-                              ),
+                            children: const [
+                              Text('Continue', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                              SizedBox(width: 10),
+                              Icon(Iconsax.arrow_right_3, size: 20),
                             ],
                           ),
                   ),
@@ -575,6 +287,19 @@ void _continue() async {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Row(
+      children: [
+        Text(
+          text,
+          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(width: 4),
+        Text("*", style: TextStyle(color: AppColors.neonGold, fontSize: 18)),
+      ],
     );
   }
 }

@@ -85,19 +85,19 @@ class _InterestsPageState extends State<InterestsPage> {
         child: Stack(
           children: [
             // Background Gradient Glow
-            Positioned(
-              top: -100,
-              right: -50,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.neonGold.withOpacity(0.05),
-                  // blurRadius: 100,
-                ),
-              ),
-            ),
+            // Positioned(
+            //   top: -100,
+            //   right: -50,
+            //   child: Container(
+            //     width: 300,
+            //     height: 300,
+            //     decoration: BoxDecoration(
+            //       shape: BoxShape.circle,
+            //       color: AppColors.neonGold.withOpacity(0.05),
+            //       // blurRadius: 100,
+            //     ),
+            //   ),
+            // ),
             
             SafeArea(
               child: Column(
@@ -151,11 +151,7 @@ class _InterestsPageState extends State<InterestsPage> {
                               padding: EdgeInsets.zero,
                             ),
                           ),
-              // Progress indicator (Step 4 of 6 - change as needed)
-              const Text(
-                "Step 4/6",
-                style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
-              )
+         
             ],
           ),
           const SizedBox(height: 24),

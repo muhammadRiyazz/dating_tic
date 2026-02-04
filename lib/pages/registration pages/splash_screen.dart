@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/providers/my_profile_provider.dart';
 import 'package:dating/providers/permission_provider.dart';
 import 'package:dating/providers/profile_provider.dart' show HomeProvider;
 import 'package:dating/services/auth_service.dart';
-import 'package:dating/main.dart'; 
+import 'package:dating/main.dart';
+import 'package:dating/services/registration_service.dart'; 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -58,7 +60,15 @@ class _SplashScreenState extends State<SplashScreen> {
       final permissionProvider = Provider.of<PermissionProvider>(context, listen: false);
       await permissionProvider.loadPermissions(userId);
       await Future.delayed(const Duration(milliseconds: 800));
-
+  try {
+        final photoService = RegistrationService();
+        final photoResponse = await photoService.getUserMainPhoto(userId.toString());
+        if (photoResponse.success && photoResponse.data != null) {
+          await authService.updateUserPhoto(photoResponse.data!);
+        }
+      } catch (e) {
+        log("⚠️ Error fetching user photo: $e");
+      }
       // Step 4: Matches
       context.read<MatchesProvider>().fetchMatches(userId.toString());
       await Future.delayed(const Duration(milliseconds: 800));

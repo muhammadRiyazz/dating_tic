@@ -51,8 +51,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   profileProvider.isLoading||profileProvider.userProfile==null?Center(child: ProfileImageShimmer()):
                   _buildMainProfileHero(context, profileProvider ),
                   const SizedBox(height: 30),
-                  _buildStatsRow(),
-                  const SizedBox(height: 30),
+                  // _buildStatsRow(),
+                  // const SizedBox(height: 30),
                   _buildPremiumMembershipCard(),
                   const SizedBox(height: 30),
                   _buildSectionLabel("YOUR POWER TOOLS"),
@@ -234,18 +234,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // Rest of your existing methods remain the same...
-  Widget _buildStatsRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _statItem("1.2k", "Likes"),
-        _vDivider(),
-        _statItem("48", "Matches"),
-        _vDivider(),
-        _statItem("95", "Boosts"),
-      ],
-    ).animate().fadeIn(delay: 200.ms);
-  }
+  // Widget _buildStatsRow() {
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.center,
+  //     children: [
+  //       _statItem("1.2k", "Likes"),
+  //       _vDivider(),
+  //       _statItem("48", "Matches"),
+  //       _vDivider(),
+  //       _statItem("95", "Boosts"),
+  //     ],
+  //   ).animate().fadeIn(delay: 200.ms);
+  // }
 
   Widget _statItem(String value, String label) {
     return Column(
@@ -396,8 +396,8 @@ class _ProfilePageState extends State<ProfilePage> {
             },
             
             child: _powerToolItem(Iconsax.edit, "Edit Profile", "Update your bio", AppColors.neonPink)),
-          _powerToolItem(Iconsax.eye, "Preview", "View as others", Colors.blueAccent),
-          _powerToolItem(Iconsax.chart_21, "Statistics", "Track your growth", Colors.greenAccent),
+          // _powerToolItem(Iconsax.eye, "Preview", "View as others", Colors.blueAccent),
+          // _powerToolItem(Iconsax.chart_21, "Statistics", "Track your growth", Colors.greenAccent),
           _powerToolItem(Iconsax.medal_star, "Verify Me", "Get blue badge", AppColors.neonGold),
         ],
       ),

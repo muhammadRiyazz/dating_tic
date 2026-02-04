@@ -136,16 +136,16 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
   }
 
   void _handleUpgrade() async {
-    // if (_selectedPriceId == null) return;
-    // final userId = await AuthService().getUserId();
-    // final provider = Provider.of<SubscriptionProvider>(context, listen: false);
-    // final selectedPrice = widget.plan.prices.firstWhere((p) => p.priceId == _selectedPriceId);
+    if (_selectedPriceId == null) return;
+    final userId = await AuthService().getUserId();
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+    final selectedPrice = widget.plan.prices.firstWhere((p) => p.priceId == _selectedPriceId);
 
-    // HapticFeedback.heavyImpact();
-    // final success = await provider.upgradeUserPlan(userId.toString(), _selectedPriceId.toString());
+    HapticFeedback.heavyImpact();
+    final success = await provider.upgradeUserPlan(userId.toString(), _selectedPriceId.toString());
 
-    // if (mounted) {
-    //   if (success) {
+    if (mounted) {
+      if (success) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => UpgradeSuccessPage(
@@ -155,10 +155,10 @@ class _PremiumSubscriptionPageState extends State<PremiumSubscriptionPage> {
             bgImage: widget.image,
           ))
         );
-    //   } else {
-    //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating));
-    //   }
-    // }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating));
+      }
+    }
   }
 
   @override

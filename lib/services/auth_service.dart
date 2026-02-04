@@ -51,11 +51,20 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_userIdKey);
   }
-
+  Future<void> updateProfile({String? name, String? photo}) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (name != null) await prefs.setString(_userNameKey, name);
+    if (photo != null) await prefs.setString(_userPhotoKey, photo);
+  }
   // Logout
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Clears all keys
+  }
+
+   Future<void> updateUserPhoto(String? photo) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (photo != null) await prefs.setString(_userPhotoKey, photo);
   }
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();

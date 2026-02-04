@@ -18,8 +18,8 @@ class GenderPage extends StatefulWidget {
 
 class _GenderPageState extends State<GenderPage> {
   // Premium Avatar URLs (Replace these with your actual image links)
-  final String maleAvatarUrl = "https://cdn3d.iconscout.com/3d/premium/thumb/man-avatar-6299535-5187871.png";
-  final String femaleAvatarUrl = "https://cdn3d.iconscout.com/3d/premium/thumb/woman-avatar-6299533-5187869.png";
+  final String maleAvatarUrl = "assets/image/boy.png";
+  final String femaleAvatarUrl = "assets/image/girl.png";
 
   @override
   void initState() {
@@ -152,15 +152,12 @@ class _GenderPageState extends State<GenderPage> {
         height: 200, // Slightly taller for images
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.neonGold : AppColors.cardBlack.withOpacity(0.6),
+          color:  AppColors.cardBlack.withOpacity(0.6),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isSelected ? AppColors.neonGold : Colors.white.withOpacity(0.08),
-            width: 2,
-          ),
+        
           boxShadow: isSelected ? [
             BoxShadow(
-              color: AppColors.neonGold.withOpacity(0.15),
+              color: AppColors.neonGold.withOpacity(0.05),
               blurRadius: 20,
               offset: const Offset(0, 8),
             )
@@ -180,12 +177,12 @@ class _GenderPageState extends State<GenderPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? Colors.black : Colors.white24,
+                      color: isSelected ? Colors.yellow : Colors.white24,
                       width: 2,
                     ),
                   ),
                   child: isSelected 
-                      ? const Center(child: Icon(Icons.circle, size: 12, color: Colors.black)) 
+                      ? const Center(child: Icon(Icons.circle, size: 12, color: Colors.yellow)) 
                       : null,
                 ),
               ),
@@ -194,13 +191,13 @@ class _GenderPageState extends State<GenderPage> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(10),
-                child: Image.network(
+                child: Image.asset(
                   imageUrl,
                   fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-                  },
+                  // loadingBuilder: (context, child, loadingProgress) {
+                  //   if (loadingProgress == null) return child;
+                  //   return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                  // },
                 ),
               ),
             ),
@@ -208,8 +205,8 @@ class _GenderPageState extends State<GenderPage> {
             Text(
               gender['genderTitle']?.toString().toUpperCase() ?? '',
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.white,
-                fontSize: 14,
+                color: Colors.white,
+                fontSize: 12,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1,
               ),
@@ -242,8 +239,8 @@ class _GenderPageState extends State<GenderPage> {
           ),
           child: Row(
             children: [
-              Text(gender['genderEmoji'] ?? '✨', style: const TextStyle(fontSize: 18)),
-              const SizedBox(width: 15),
+              // Text(gender['genderEmoji'] ?? '✨', style: const TextStyle(fontSize: 18)),
+              // const SizedBox(width: 15),
               Expanded(
                 child: Text(
                   gender['genderTitle'] ?? '',

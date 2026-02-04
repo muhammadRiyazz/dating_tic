@@ -7,6 +7,9 @@ import 'dart:ui';
 
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/home/home_screen.dart';
+import 'package:dating/providers/matches_provider.dart';
+import 'package:dating/providers/permission_provider.dart';
+import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:dating/services/registration_service.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +21,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 // Import notification service
-import 'package:dating/services/notification_service.dart';
+import 'package:dating/services/notification/notification_service.dart';
 
 // Import your main app file
 import 'package:dating/main.dart';
@@ -100,7 +103,7 @@ class _PhotosPageState extends State<PhotosPage> {
         await Future.delayed(const Duration(seconds: 1));
         
         // Try force refresh
-        token = await FirebaseNotificationService.forceRefreshToken();
+        token = await FirebaseNotificationService.getToken();
       }
       
       if (token != null && token.isNotEmpty) {
@@ -454,7 +457,7 @@ class _PhotosPageState extends State<PhotosPage> {
     
     await Future.delayed(const Duration(seconds: 2));
     
-    String? token = await FirebaseNotificationService.forceRefreshToken();
+    String? token = await FirebaseNotificationService.getToken();
     
     if (token != null) {
       _fcmToken = token;
@@ -879,7 +882,7 @@ class _PhotosPageState extends State<PhotosPage> {
       // Handle notifications
       _fcmToken = await _initializeNotificationsAndGetToken();
       log('Final FCM Token for registration: $_fcmToken');
-      
+      log(' ----------  -----${widget.userdata.intrestgender.toString()}');
       // Call API with notification token
       final apiResult = await RegistrationService().updateProfileToAPI(data, _fcmToken ?? '');
       
@@ -904,8 +907,23 @@ class _PhotosPageState extends State<PhotosPage> {
         // await Future.delayed(const Duration(milliseconds: 1500));
         
         if (mounted) {
-          context.read<MyProfileProvider>().fetchUserProfile(widget.userdata.userRegId.toString());
-          
+          final userId=widget.userdata.userRegId.toString();
+          context.read<MyProfileProvider>().fetchUserProfile(userId);
+            Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
+        context.read<MyProfileProvider>().fetchUserProfile(userId);
+
+
+
+
+
+
+      // Step 3: Permissions (IMPORTANT!)
+      final permissionProvider = Provider.of<PermissionProvider>(context, listen: false);
+      await permissionProvider.loadPermissions(userId);
+
+      // Step 4: Matches
+      context.read<MatchesProvider>().fetchMatches(userId.toString());
+
           // Navigate to home screen
           Navigator.pushAndRemoveUntil(
             context,

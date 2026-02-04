@@ -365,27 +365,24 @@ Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
       'country': data.country ?? 'test',
       'address': data.address ?? 'test',
       'bio': data.bio ?? '',
+      'notificationFcm': fcmToken ,
+      'last_seen': DateTime.now().toIso8601String(),
+      'privatephotos':jsonEncode(  data.privatePhotos),
+      'interested_gender':data.intrestgender??'1',
+      'voiceEncryption':data.voiceEncryption??'',
+      'voiceEncryptionExtension':data.voiceEncryptionExtension??'',
+      'Is_live': '1',
+      'phno':data.phoneNo??'',
       'photos': jsonEncode(data.photos),
       'interests': jsonEncode(data.interests),
       'mainphotourl': data.mainPhotoUrl?.toString() ?? '',
-      'notificationFcm': fcmToken ,
-      'last_seen': DateTime.now().toIso8601String(),
-      'privatephotos':jsonEncode(  data.privatePhotos)
-      
-    ,
-    'interested_gender':data.intrestgender??'1',
-'voiceEncryption':data.voiceEncryption??'',
-'voiceEncryptionExtension':data.voiceEncryptionExtension??'',
-
-      'Is_live': '1',
-      'phno':data.phoneNo??''
     };
   }
 
  Future<Map<String, dynamic>> updateProfileToAPI(UserRegistrationModel data ,String  fcmToken) async {
     try {
       final Map<String, String> requestBody = prepareAPIRequest(data ,fcmToken);
-      
+      // log(requestBody.toString());
       final response = await http.post(
         Uri.parse("$baseUrl/update-profile"),
         body: requestBody,

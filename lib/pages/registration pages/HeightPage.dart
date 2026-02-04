@@ -247,7 +247,7 @@ class _HeightPageState extends State<HeightPage> {
                                           borderRadius: BorderRadius.circular(16),
                                         ),
                                         child: Text(
-                                          'CM',
+                                          'Centimeters',
                                           style: TextStyle(
                                             color: !_useFeetInches 
                                                 ? Colors.black 
@@ -258,42 +258,7 @@ class _HeightPageState extends State<HeightPage> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (!_useFeetInches) {
-                                          setState(() => _useFeetInches = true);
-                                        }
-                                      },
-                                      child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 300),
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          gradient: _useFeetInches
-                                              ? LinearGradient(
-                                                  colors: [
-                                                    AppColors.neonGold,
-                                                    AppColors.neonGold.withOpacity(0.8),
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                )
-                                              : null,
-                                          color: !_useFeetInches ? Colors.transparent : null,
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: Text(
-                                          'FT/IN',
-                                          style: TextStyle(
-                                            color: _useFeetInches 
-                                                ? Colors.black 
-                                                : Colors.grey.shade400,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                   
                                   ],
                                 ),
                               ),

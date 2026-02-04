@@ -7,9 +7,11 @@ import 'package:dating/main.dart';
 import 'package:dating/models/user_registration_model.dart';
 import 'package:dating/pages/home/home_screen.dart';
 import 'package:dating/pages/registration%20pages/name_page.dart';
+import 'package:dating/providers/matches_provider.dart';
 import 'package:dating/providers/my_profile_provider.dart';
+import 'package:dating/providers/permission_provider.dart';
 import 'package:dating/services/auth_service.dart';
-import 'package:dating/services/notification_service.dart';
+import 'package:dating/services/notification/notification_service.dart';
 import 'package:dating/services/registration_service.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -147,10 +149,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       // Try to get token
       String? token = await FirebaseNotificationService.getToken(retry: true);
       
-      if (token == null || token.isEmpty) {
-        // Try force refresh
-        token = await FirebaseNotificationService.forceRefreshToken();
-      }
+      // if (token == null || token.isEmpty) {
+      //   // Try force refresh
+      //   token = await FirebaseNotificationService.();
+      // }
       
       if (token != null && token.isNotEmpty) {
         _fcmToken = token;
@@ -218,21 +220,33 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       );
 
       // Step 4: Fetch user's main photo
-      // try {
-      //   final photoService = RegistrationService();
-      //   final photoResponse = await photoService.getUserMainPhoto(provider.userId.toString());
-      //   if (photoResponse.success && photoResponse.data != null) {
-      //     await authService.updateUserPhoto(photoResponse.data!);
-      //   }
-      // } catch (e) {
-      //   log("⚠️ Error fetching user photo: $e");
-      // }
+      try {
+        final photoService = RegistrationService();
+        final photoResponse = await photoService.getUserMainPhoto(provider.userId.toString());
+        if (photoResponse.success && photoResponse.data != null) {
+          await authService.updateUserPhoto(photoResponse.data!);
+        }
+      } catch (e) {
+        log("⚠️ Error fetching user photo: $e");
+      }
 
       // Step 5: Trigger home data fetch
       final userId = await authService.getUserId();
       if (userId != null) {
         Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
         context.read<MyProfileProvider>().fetchUserProfile(userId);
+
+
+
+
+
+
+      // Step 3: Permissions (IMPORTANT!)
+      final permissionProvider = Provider.of<PermissionProvider>(context, listen: false);
+      await permissionProvider.loadPermissions(userId);
+
+      // Step 4: Matches
+      context.read<MatchesProvider>().fetchMatches(userId.toString());
 
       }
 
@@ -275,12 +289,13 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       // }
 
       // Step 2: Create model with userId
-      final UserRegistrationModel userdata = UserRegistrationModel().copyWith(
-        userRegId: provider.userId,
+  
 
-        phoneNo: widget.phoneNumber
-        
-      );
+// Usage
+final UserRegistrationModel userdata = UserRegistrationModel().copyWith(
+  userRegId: provider.userId,
+  phoneNo: widget.phoneNumber.tenDigitsOnly
+);
 
       log("📝 New user ID: ${userdata.userRegId}");
       
@@ -783,3 +798,18 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   }
 }
 
+
+  extension PhoneNumberExtension on String {
+  String get tenDigitsOnly {
+    // Remove all non-numeric characters
+    final digits = replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Safety check - ensure we have at least 10 digits
+    if (digits.length < 10) {
+      return digits; // Return whatever we have (or throw error if needed)
+    }
+    
+    // Return last 10 digits
+    return digits.substring(digits.length - 10);
+  }
+}
