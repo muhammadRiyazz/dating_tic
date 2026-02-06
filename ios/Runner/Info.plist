@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+
+	<!-- App Identity -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -18,12 +20,12 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- UI -->
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -32,68 +34,66 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	
-	<!-- Firebase Configuration -->
+
+	<!-- Firebase -->
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
 
-	<!-- Network & Security Settings -->
+	<!-- Network -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>amazonaws.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-			</dict>
-		</dict>
 	</dict>
 
-	<!-- Location Permissions -->
+	<!-- Location -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to your location to find nearby matches and show them on the map.</string>
+	<string>We use your location to show nearby matches.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs access to your location to find nearby matches even when the app is in the background.</string>
-	<key>NSLocationUsageDescription</key>
-	<string>This app needs access to your location to function correctly.</string>
+	<string>Your location helps us find matches even when the app is running in the background.</string>
 
-	<!-- Camera & Photo Gallery Permissions -->
+	<!-- Camera (VIDEO CALLS) -->
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to take profile photos.</string>
+	<string>Camera access is required to enable video calls with other users.</string>
+
+	<!-- Microphone (VOICE & VIDEO CALLS) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is required to enable voice and video calls with other users.</string>
+
+	<!-- Photos -->
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to your photo library to select profile photos.</string>
+	<string>Photo access is required to select profile pictures.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>This app needs permission to save processed profile photos to your gallery.</string>
+	<string>This allows the app to save images to your photo library.</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
 	<true/>
 
-	<!-- Face Detection & ML Kit Permissions -->
+	<!-- Face ID (optional but fine) -->
 	<key>NSFaceIDUsageDescription</key>
-	<string>This app analyzes facial features in photos to ensure clear and safe profile images.</string>
-	<key>NSVisionUsageDescription</key>
-	<string>This app analyzes uploaded images to detect faces and blur inappropriate content for user safety.</string>
+	<string>Face ID is used to securely authenticate your account.</string>
 
-	<!-- Notification Permissions -->
+	<!-- Notifications -->
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>This app needs to send you notifications for new matches, messages, and updates.</string>
-	<key>NSMicrophoneUsageDescription</key>
-    <string>We need access to your microphone to record your voice bio.</string>
-    <key>NSAppleMusicUsageDescription</key>
-    <string>We need access to play back your recording.</string>
-	<!-- Orientation Settings -->
+	<string>Notifications are used for messages, matches, and incoming calls.</string>
+
+	<!-- REQUIRED FOR CALLING (CRITICAL) -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>voip</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Orientation -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -102,12 +102,5 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
-	<!-- Notification Background Modes -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>location</string>
-		<string>remote-notification</string>
-	</array>
 </dict>
 </plist>

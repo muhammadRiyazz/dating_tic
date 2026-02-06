@@ -128,23 +128,47 @@ class _AppInitializerState extends State<AppInitializer> {
     });
   }
 
+ // main.dart logic update
   void _setupNotificationListener() {
     _notificationSub = FirebaseNotificationService.notificationStream.listen((event) {
       try {
-        final data = Map<String, dynamic>.from(event['data'] ?? {});
-        log('📱 Processing Foreground notification: $data');
+        log('📱 Notification Stream Event: ${event['type']}');
+        
+        // Extract data based on whether it's a RemoteMessage or raw map
+        final Map<String, dynamic> data = Map<String, dynamic>.from(event['data'] ?? {});
+        
+        // If the body is missing in data but present in the top-level event
+        if (data['body'] == null && event['body'] != null) {
+          data['body'] = event['body'];
+        }
+        if (data['title'] == null && event['title'] != null) {
+          data['title'] = event['title'];
+        }
 
         final notification = NotificationMapper.fromFCM(data);
         
-        // Ensure UI is ready before showing
-        if (navigatorKey.currentState != null) {
-           InAppBanner.show(
-            notification,
-            () => _handleNotificationTap(notification),
-          );
-        }
+        // Use a small delay if the app is currently transitioning
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (navigatorKey.currentState?.overlay != null) {
+             InAppBanner.show(
+              notification,
+              () => _handleNotificationTap(notification),
+            );
+            
+            // OPTIONAL: Refresh relevant providers based on type
+            if (notification.type == 'match' || notification.type == 'like') {
+              final context = navigatorKey.currentContext;
+              if (context != null) {
+                Provider.of<MatchesProvider>(context, listen: false).fetchMatches(_userId!);
+                Provider.of<LikersProvider>(context, listen: false).fetchLikers(_userId!);
+              }
+            }
+          } else {
+            log('⚠️ Overlay not ready for notification');
+          }
+        });
       } catch (e) {
-        log('❌ Error showing banner: $e');
+        log('❌ Error processing notification: $e');
       }
     });
   }

@@ -53,6 +53,8 @@ dependencies:
   custom_refresh_indicator: ^4.0.1
   flutter_native_splash: ^2.4.7
   permission_handler_platform_interface: ^4.3.0
+  agora_rtc_engine: ^6.5.3
+
   
 dev_dependencies:
   flutter_test:

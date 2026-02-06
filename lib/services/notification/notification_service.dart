@@ -170,14 +170,11 @@ class FirebaseNotificationService {
 
   static Future<void> _setupNotificationHandlers() async {
     // Foreground messages
+ // inside FirebaseNotificationService
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      log("📱 Foreground message received");
-      log("Title: ${message.notification?.title}");
-      log("Body: ${message.notification?.body}");
-      log("Data: ${message.data}");
+      log("📱 Foreground message hit: ${message.messageId}");
       
-      // _showLocalNotification(message);
-      
+      // We pass the full structure to ensure the mapper gets everything
       _notificationController.add({
         'type': 'foreground',
         'title': message.notification?.title,

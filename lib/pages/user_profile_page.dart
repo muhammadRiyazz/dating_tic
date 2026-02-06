@@ -548,7 +548,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> with TickerProv
                           child: Icon(canLike ? Iconsax.heart5 : Iconsax.lock, color: canLike ? Colors.black : Colors.white54, size: 30),
                         ),
                       ),
-                    if (widget.match) _actionBtn(Iconsax.user_remove, Colors.redAccent, () {}),
+                    // if (widget.match) _actionBtn(Iconsax.user_remove, Colors.redAccent, () {}),
                   ],
                 ),
               ),

@@ -11,7 +11,7 @@ import UserNotifications
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-  ) -> Bool {`
+  ) -> Bool {
     
     // ✅ Google Maps API Key
     GMSServices.provideAPIKey("AIzaSyAGmdSqGPgz_-Qoc669E8U7pHNTAJWGGSU")
@@ -114,7 +114,7 @@ import UserNotifications
     let userInfo = response.notification.request.content.userInfo
     print("📱 Notification tapped: \(userInfo)")
     
-    // You can send this to Flutter if needed
+    // Send this to Flutter via NotificationCenter
     NotificationCenter.default.post(
       name: NSNotification.Name("NotificationTapped"),
       object: nil,
@@ -130,7 +130,6 @@ extension AppDelegate: MessagingDelegate {
   func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
     print("🔥 Firebase FCM Token: \(String(describing: fcmToken))")
     
-    // Send token to Flutter if needed
     if let token = fcmToken {
       let dataDict: [String: String] = ["token": token]
       NotificationCenter.default.post(
