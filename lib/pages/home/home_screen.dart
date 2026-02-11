@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:dating/pages/chat/chating_list.dart';
 import 'package:dating/pages/home/categories/categories_page_6.dart';
 import 'package:dating/pages/home/for_you%20list.dart';
 import 'package:dating/pages/user_profile_page.dart';
@@ -182,13 +183,13 @@ IndexedStack(
   children: [
     _buildHomeContent(),
     const MatchesPage(),
-    
+    ChatListPage(),
     // Updated Chat Page
-    const EliteWorkInProgress(
-      icon: Iconsax.message_notif5,
-      title: "Elite Conversations",
-      description: "We are perfecting the art of private communication. Your secure vibe room is launching very soon.",
-    ),
+    // const EliteWorkInProgress(
+    //   icon: Iconsax.message_notif5,
+    //   title: "Elite Conversations",
+    //   description: "We are perfecting the art of private communication. Your secure vibe room is launching very soon.",
+    // ),
     
     // Updated Call Page
     const EliteWorkInProgress(

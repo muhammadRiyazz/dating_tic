@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:math' hide log;
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -12,6 +13,7 @@ import 'package:dating/providers/permission_provider.dart';
 import 'package:dating/providers/profile_provider.dart';
 import 'package:dating/services/auth_service.dart';
 import 'package:dating/services/registration_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
@@ -26,6 +28,7 @@ import 'package:dating/services/notification/notification_service.dart';
 // Import your main app file
 import 'package:dating/main.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../providers/my_profile_provider.dart';
 
@@ -805,7 +808,161 @@ class _PhotosPageState extends State<PhotosPage> {
   }
 
   // ====================== REGISTRATION FLOW ======================
-  void _uploadAndContinue() async {
+  // void _uploadAndContinue() async {
+  //   log('_uploadAndContinue');
+  //   log(jsonEncode(widget.userdata.interests).toString());
+
+  //   // Validation
+  //   if (_profilePhotos.length < _minPhotos) {
+  //     _showErrorSnackbar('Please add at least $_minPhotos photos');
+  //     return;
+  //   }
+    
+  //   if (widget.userdata.userRegId == null) {
+  //     _showErrorSnackbar('User ID not found. Please restart registration.');
+  //     return;
+  //   }
+    
+  //   // Start the registration process
+  //   setState(() {
+  //     _isUploading = true;
+  //     _uploadError = '';
+  //   });
+    
+  //   try {
+  //     // Extract base64 images from profile photos
+  //     final List<String> base64Images = [];
+  //     for (final photo in _profilePhotos) {
+  //       if (photo.base64 != null && photo.base64!.isNotEmpty) {
+  //         base64Images.add(photo.base64!);
+  //       }
+  //     }
+      
+  //     if (base64Images.isEmpty) {
+  //       throw Exception('No valid photos to upload');
+  //     }
+      
+  //     // Validate base64 strings
+  //     for (int i = 0; i < base64Images.length; i++) {
+  //       try {
+  //         base64Decode(base64Images[i]);
+  //       } catch (e) {
+  //         throw Exception('Photo ${i + 1} has invalid base64 encoding');
+  //       }
+  //     }
+      
+  //     // Prepare user data
+  //     String mainPhotoUrl = base64Images.isNotEmpty ? base64Images[0] : '';
+      
+  //     final UserRegistrationModel data = UserRegistrationModel(
+  //       userName: widget.userdata.userName,
+  //       userRegId: widget.userdata.userRegId,
+  //       dateOfBirth: widget.userdata.dateOfBirth,
+  //       gender: widget.userdata.gender,
+  //       height: widget.userdata.height,
+  //       smokingHabit: widget.userdata.smokingHabit,
+  //       drinkingHabit: widget.userdata.drinkingHabit,
+  //       relationshipGoal: widget.userdata.relationshipGoal,
+  //       job: widget.userdata.job,
+  //       education: widget.userdata.education,
+  //       latitude: widget.userdata.latitude,
+  //       longitude: widget.userdata.longitude,
+  //       city: widget.userdata.city,
+  //       state: widget.userdata.state,
+  //       country: widget.userdata.country,
+  //       address: widget.userdata.address,
+  //       bio: widget.userdata.bio,
+  //       interests: widget.userdata.interests,
+  //       photos: base64Images,
+  //       mainPhotoUrl: mainPhotoUrl,
+  //       phoneNo: widget.userdata.phoneNo,
+  //       intrestgender: widget.userdata.intrestgender??'',
+  //       voiceEncryption: widget.userdata.voiceEncryption,
+  //       voiceEncryptionExtension: widget.userdata.voiceEncryptionExtension,
+  //       privatePhotos: []
+  //     );
+      
+  //     // Handle notifications
+  //     _fcmToken = await _initializeNotificationsAndGetToken();
+  //     log('Final FCM Token for registration: $_fcmToken');
+  //     log(' ----------  -----${widget.userdata.intrestgender.toString()}');
+  //     // Call API with notification token
+  //     final apiResult = await RegistrationService().updateProfileToAPI(data, _fcmToken ?? '');
+      
+  //     if (apiResult['success'] == true) {
+  //       // Login user
+  //       final authService = AuthService();
+  //       final responseData = apiResult['data'];
+  //       final String userName = responseData?['data']?['user_name'] ?? widget.userdata.userName ?? '';
+  //       final String userPhone = responseData?['data']?['phone'] ?? '';
+        
+  //       await authService.login(
+  //         userId: widget.userdata.userRegId.toString(),
+  //         token: responseData?['data']?['token'] ?? '',
+  //         phone: userPhone,
+  //         name: userName,
+  //         photo: mainPhotoUrl,
+  //       );
+        
+  //       _showSuccessSnackbar('🎉 Registration Complete! Welcome to Weekend!');
+        
+  //       // Navigate to home
+  //       // await Future.delayed(const Duration(milliseconds: 1500));
+        
+  //       if (mounted) {
+  //         final userId=widget.userdata.userRegId.toString();
+  //         context.read<MyProfileProvider>().fetchUserProfile(userId);
+  //           Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
+  //       context.read<MyProfileProvider>().fetchUserProfile(userId);
+
+
+
+
+
+
+  //     // Step 3: Permissions (IMPORTANT!)
+  //     final permissionProvider = Provider.of<PermissionProvider>(context, listen: false);
+  //     await permissionProvider.loadPermissions(userId);
+
+  //     // Step 4: Matches
+  //     context.read<MatchesProvider>().fetchMatches(userId.toString());
+
+  //         // Navigate to home screen
+  //         Navigator.pushAndRemoveUntil(
+  //           context,
+  //           MaterialPageRoute(
+  //             builder: (context) => const WeekendHome(),
+  //           ),
+  //           (route) => false,
+  //         );
+  //       }
+  //     } else {
+  //       setState(() {
+  //         _uploadError = apiResult['message'] ?? 'Failed to update profile';
+  //       });
+  //       _showErrorSnackbar(apiResult['message'] ?? 'Failed to update profile. Please try again.');
+  //     }
+      
+  //   } catch (e) {
+  //     log('Registration error: $e');
+  //     setState(() {
+  //       _uploadError = e.toString();
+  //     });
+  //     _showErrorSnackbar('An error occurred: ${e.toString()}');
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isUploading = false;
+  //       });
+  //     }
+  //   }
+  // }
+
+
+
+
+
+void _uploadAndContinue() async {
     log('_uploadAndContinue');
     log(jsonEncode(widget.userdata.interests).toString());
 
@@ -851,6 +1008,59 @@ class _PhotosPageState extends State<PhotosPage> {
       // Prepare user data
       String mainPhotoUrl = base64Images.isNotEmpty ? base64Images[0] : '';
       
+      // ============================================================
+      // 🔥 STEP 1: CREATE FIREBASE ACCOUNT FOR CHAT
+      // ============================================================
+      String? firebaseUid;
+      User? firebaseUser;
+      
+      try {
+        // Generate a clean email from phone number
+        String phoneNumber = widget.userdata.phoneNo ?? '';
+        String cleanPhone = phoneNumber.replaceAll('+', '').replaceAll(' ', '').replaceAll('-', '');
+        String firebaseEmail = '$cleanPhone@weekend.app';
+        
+        // Generate random password
+        String randomPassword = _generateRandomPassword();
+        
+        log('Creating Firebase account with email: $firebaseEmail');
+        
+        // Create Firebase user
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+          email: firebaseEmail,
+          password: randomPassword,
+        );
+        
+        firebaseUser = userCredential.user;
+        firebaseUid = firebaseUser?.uid;
+        
+        // // Update Firebase profile with user name and photo
+        // // await firebaseUser?.updateDisplayName(widget.userdata.userName);
+        
+        // // We'll update photo URL later after image upload
+        // if (mainPhotoUrl.isNotEmpty) {
+        //   // You can update photo URL if needed
+        //   // await firebaseUser?.updatePhotoURL(mainPhotoUrl);
+        // }
+        
+        // await firebaseUser?.reload();
+        
+        log('✅ Firebase account created successfully!');
+        log('✅ Firebase UID: $firebaseUid');
+        log('✅ Firebase Email: $firebaseEmail');
+        
+      
+        
+      } catch (e) {
+        log('⚠️ Firebase account creation error: $e');
+    
+      }
+      
+      // ============================================================
+      // STEP 2: PREPARE REGISTRATION DATA WITH FIREBASE UID
+      // ============================================================
+      
       final UserRegistrationModel data = UserRegistrationModel(
         userName: widget.userdata.userName,
         userRegId: widget.userdata.userRegId,
@@ -873,18 +1083,26 @@ class _PhotosPageState extends State<PhotosPage> {
         photos: base64Images,
         mainPhotoUrl: mainPhotoUrl,
         phoneNo: widget.userdata.phoneNo,
-        intrestgender: widget.userdata.intrestgender??'',
+        intrestgender: widget.userdata.intrestgender ?? '',
         voiceEncryption: widget.userdata.voiceEncryption,
         voiceEncryptionExtension: widget.userdata.voiceEncryptionExtension,
-        privatePhotos: []
+        privatePhotos: [],
+        firebaseUid: firebaseUid, // 🔥 Add this field to your model
       );
       
       // Handle notifications
       _fcmToken = await _initializeNotificationsAndGetToken();
       log('Final FCM Token for registration: $_fcmToken');
-      log(' ----------  -----${widget.userdata.intrestgender.toString()}');
-      // Call API with notification token
-      final apiResult = await RegistrationService().updateProfileToAPI(data, _fcmToken ?? '');
+      log('Interests: ${widget.userdata.intrestgender.toString()}');
+      log('Firebase UID: $firebaseUid');
+      
+      // ============================================================
+      // STEP 3: CALL PHP API WITH FIREBASE UID
+      // ============================================================
+      final apiResult = await RegistrationService().updateProfileToAPI(
+        data, 
+        _fcmToken ?? '',
+      );
       
       if (apiResult['success'] == true) {
         // Login user
@@ -893,37 +1111,34 @@ class _PhotosPageState extends State<PhotosPage> {
         final String userName = responseData?['data']?['user_name'] ?? widget.userdata.userName ?? '';
         final String userPhone = responseData?['data']?['phone'] ?? '';
         
+        // Store both PHP user ID and Firebase UID in local storage
         await authService.login(
           userId: widget.userdata.userRegId.toString(),
           token: responseData?['data']?['token'] ?? '',
           phone: userPhone,
           name: userName,
           photo: mainPhotoUrl,
+          firebaseUid: firebaseUid, // 🔥 Save Firebase UID
         );
         
         _showSuccessSnackbar('🎉 Registration Complete! Welcome to Weekend!');
         
         // Navigate to home
-        // await Future.delayed(const Duration(milliseconds: 1500));
-        
         if (mounted) {
-          final userId=widget.userdata.userRegId.toString();
+          final userId = widget.userdata.userRegId.toString();
+          
+          // Load all required data
           context.read<MyProfileProvider>().fetchUserProfile(userId);
-            Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
-        context.read<MyProfileProvider>().fetchUserProfile(userId);
-
-
-
-
-
-
-      // Step 3: Permissions (IMPORTANT!)
-      final permissionProvider = Provider.of<PermissionProvider>(context, listen: false);
-      await permissionProvider.loadPermissions(userId);
-
-      // Step 4: Matches
-      context.read<MatchesProvider>().fetchMatches(userId.toString());
-
+          Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
+          context.read<MyProfileProvider>().fetchUserProfile(userId);
+          
+          // Load permissions
+          final permissionProvider = Provider.of<PermissionProvider>(context, listen: false);
+          await permissionProvider.loadPermissions(userId);
+          
+          // Load matches
+          context.read<MatchesProvider>().fetchMatches(userId.toString());
+          
           // Navigate to home screen
           Navigator.pushAndRemoveUntil(
             context,
@@ -934,6 +1149,16 @@ class _PhotosPageState extends State<PhotosPage> {
           );
         }
       } else {
+        // If PHP API fails, delete Firebase account to clean up
+        if (firebaseUser != null) {
+          try {
+            await firebaseUser.delete();
+            log('✅ Deleted Firebase account due to PHP registration failure');
+          } catch (e) {
+            log('⚠️ Failed to delete Firebase account: $e');
+          }
+        }
+        
         setState(() {
           _uploadError = apiResult['message'] ?? 'Failed to update profile';
         });
@@ -954,6 +1179,20 @@ class _PhotosPageState extends State<PhotosPage> {
       }
     }
   }
+
+// ============================================================
+// HELPER METHODS FOR FIREBASE
+// ============================================================
+
+  String _generateRandomPassword() {
+    const String chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*';
+    final random = Random.secure();
+    return List.generate(16, (index) => chars[random.nextInt(chars.length)]).join();
+  }
+
+
+
+
 
   void _showSuccessSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

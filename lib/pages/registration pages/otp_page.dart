@@ -236,8 +236,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         Provider.of<HomeProvider>(context, listen: false).fetchHomeData(userId);
         context.read<MyProfileProvider>().fetchUserProfile(userId);
 
+      final provider = context.read<MyProfileProvider>();
 
-
+;
 
 
 
@@ -247,6 +248,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
       // Step 4: Matches
       context.read<MatchesProvider>().fetchMatches(userId.toString());
+   authService.setUid(provider.userProfile?.uID??'');
 
       }
 

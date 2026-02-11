@@ -544,8 +544,14 @@ class Profile {
   final bool isLive;
   final double? distance; // Added field
   final int? interestMatch; // Added field
+  final String? uID;
+
+
+
+
 
   Profile({
+    this.uID,
     this.interestedGender,
     this.interestedGenderId,
     this.voiceUrl,
@@ -582,6 +588,7 @@ class Profile {
 
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
+      uID: json['uid'],
       interestedGender: json['interested_gender'],
       interestedGenderId: json['interested_gender_id'],
       voiceUrl: json['voice_url'],
@@ -636,6 +643,7 @@ class Profile {
   }
 
   Profile copyWith({
+    String ? uID,
     String? interestedGender,
     String? interestedGenderId,
     String? voiceUrl,
@@ -670,6 +678,7 @@ class Profile {
     int? interestMatch, // Added to copyWith
   }) {
     return Profile(
+      uID: uID??this.uID,
       interestedGender: interestedGender ?? this.interestedGender,
       interestedGenderId: interestedGenderId ?? this.interestedGenderId,
       voiceUrl: voiceUrl ?? this.voiceUrl,
@@ -707,6 +716,7 @@ class Profile {
 
   factory Profile.empty() {
     return Profile(
+      uID: null,
       interestedGender: null,
       interestedGenderId: null,
       voiceUrl: null,

@@ -15,6 +15,8 @@ class AuthService {
   static const String _userPhoneKey = 'user_phone';
   static const String _userNameKey = 'user_name';
   static const String _userPhotoKey = 'user_photo';
+    static const String _firebaseUid = 'firebase_uid';
+
 
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
@@ -26,13 +28,18 @@ class AuthService {
     String? token,
     String? phone,
     String? name,
+    String? firebaseUid,
     required String photo, // Now strictly required
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_isLoggedInKey, true);
     await prefs.setString(_userIdKey, userId);
     await prefs.setString(_userPhotoKey, photo); // Save photo URL
-    
+
+
+
+    if (firebaseUid != null) await prefs.setString(_firebaseUid, firebaseUid);
+
     if (token != null) await prefs.setString(_userTokenKey, token);
     if (phone != null) await prefs.setString(_userPhoneKey, phone);
     if (name != null) await prefs.setString(_userNameKey, name);
@@ -46,16 +53,33 @@ class AuthService {
     return prefs.getString(_userPhotoKey);
   }
 
+
+ Future setUid(String firebaseUid) async {
+    final prefs = await SharedPreferences.getInstance();
+     prefs.setString(_firebaseUid, firebaseUid);
+  }
+
+
+  // Get user ID
+  Future<String?> getUId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_firebaseUid);
+  }
+
+
   // Get user ID
   Future<String?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_userIdKey);
   }
+
+
   Future<void> updateProfile({String? name, String? photo}) async {
     final prefs = await SharedPreferences.getInstance();
     if (name != null) await prefs.setString(_userNameKey, name);
     if (photo != null) await prefs.setString(_userPhotoKey, photo);
   }
+
   // Logout
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();

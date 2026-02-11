@@ -376,6 +376,7 @@ Future<ApiResponse<String>> getUserMainPhoto(String userId) async {
       'photos': jsonEncode(data.photos),
       'interests': jsonEncode(data.interests),
       'mainphotourl': data.mainPhotoUrl?.toString() ?? '',
+      'uid':data.firebaseUid??''
     };
   }
 

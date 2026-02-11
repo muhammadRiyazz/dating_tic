@@ -19,8 +19,19 @@ class MyProfileProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final profile = await _profileService.fetchProfileById(userId);
+      final profile = await _profileService.fetchProfileById(userId);   
       _userProfile = profile;
+
+
+
+
+
+
+
+
+
+
+      
     } catch (e) {
       _error = e.toString();
       debugPrint('Error fetching profile: $e');

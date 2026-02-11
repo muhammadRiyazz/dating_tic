@@ -26,7 +26,7 @@ class UserRegistrationModel {
   final String? bio;
   final List<String>? photos;
     final List<String>? privatePhotos;
-
+final String? firebaseUid;
   final List<String>? interests;
   final String? mainPhotoUrl;
 
@@ -55,9 +55,11 @@ class UserRegistrationModel {
     this.address,
     this.bio,
     this.photos,
+    this.firebaseUid,
     this.mainPhotoUrl,
   });
 UserRegistrationModel copyWith({
+  String? firebaseUid ,
   String? voiceEncryptionExtension,
   String? voiceEncryption,
   List<String>? interests,
@@ -85,6 +87,7 @@ UserRegistrationModel copyWith({
   String? mainPhotoUrl,
 }) {
   return UserRegistrationModel(
+    firebaseUid:firebaseUid ?? this.firebaseUid ,
     voiceEncryption: voiceEncryption ?? this.voiceEncryption,
     voiceEncryptionExtension:
         voiceEncryptionExtension ?? this.voiceEncryptionExtension,
@@ -144,7 +147,7 @@ UserRegistrationModel copyWith({
   // Alternative: Include null values in JSON (uncomment if needed)
   Map<String, dynamic> toJson() {
     return {
-
+"uid":firebaseUid,
       'interests':interests,
       'userRegId': userRegId,
       'user_name': userName,
