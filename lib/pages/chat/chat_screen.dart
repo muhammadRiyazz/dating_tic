@@ -22,7 +22,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
    initState()  {
     super.initState();
-getuid();
+    getuid();
     _chatService.markMessagesAsRead(widget.chatId);
   }
  Future<String>  getuid()async 
