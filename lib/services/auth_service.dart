@@ -61,9 +61,9 @@ class AuthService {
 
 
   // Get user ID
-  Future<String?> getUId() async {
+  Future<String> getUId() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_firebaseUid);
+    return prefs.getString(_firebaseUid)??"";
   }
 
 

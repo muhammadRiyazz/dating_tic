@@ -10,7 +10,7 @@ configurations.all {
     exclude(group = "com.google.firebase", module = "firebase-iid")
 }
 android {
-    namespace = "com.dating.weekendtest"
+    namespace = "com.dating.weekend"
     // Using 35 as it is the current standard for modern plugins
     compileSdk = 36 
     ndkVersion = flutter.ndkVersion
@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.dating.weekendtest"
+        applicationId = "com.dating.weekend"
         
         // flutter_local_notifications requires at least 21
         minSdk = flutter.minSdkVersion 

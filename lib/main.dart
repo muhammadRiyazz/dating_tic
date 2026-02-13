@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:dating/pages/first_page.dart';
 import 'package:dating/pages/home/home_screen.dart';
 import 'package:dating/pages/registration%20pages/splash_screen.dart';
+import 'package:dating/providers/chat%20providers/chat_provider.dart';
 import 'package:dating/providers/interaction_provider.dart';
 import 'package:dating/providers/likers_provider.dart';
 import 'package:dating/providers/matches_provider.dart';
@@ -56,6 +57,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UpdateProfileProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
         ChangeNotifierProvider(create: (_) => PermissionProvider()),
+            ChangeNotifierProvider(create: (_) => ChatProvider()), // Add this
+
       ],
       child: const MyApp(),
     ),

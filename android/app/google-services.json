@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "1066357031033",
-    "project_id": "weekend-145c0",
-    "storage_bucket": "weekend-145c0.firebasestorage.app"
+    "project_number": "851422933707",
+    "project_id": "weekend-157d1",
+    "storage_bucket": "weekend-157d1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1066357031033:android:d750c46dc55fa2146554a8",
+        "mobilesdk_app_id": "1:851422933707:android:6546494cf1ad6ce309614e",
         "android_client_info": {
-          "package_name": "com.dating.weekendtest"
+          "package_name": "com.dating.weekend"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyATf4mvZ-UCdifJuwQ50PiVCcYzysceP4I"
+          "current_key": "AIzaSyAYmTRvQL_nRi9g0IQ24ffi74rwGl4npW0"
         }
       ],
       "services": {

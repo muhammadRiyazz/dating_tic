@@ -13,7 +13,7 @@ class SubscriptionService {
     'https://images.unsplash.com/photo-1511519620772-8ce30462884f?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     'https://images.pexels.com/photos/3171204/pexels-photo-3171204.jpeg',
     'https://images.pexels.com/photos/4873585/pexels-photo-4873585.jpeg',
-        'https://images.pexels.com/photos/3171204/pexels-photo-3171204.jpeg',
+    'https://images.pexels.com/photos/3171204/pexels-photo-3171204.jpeg',
     'https://images.pexels.com/photos/4873585/pexels-photo-4873585.jpeg',
     'https://images.pexels.com/photos/6579000/pexels-photo-6579000.jpeg',
     'https://images.pexels.com/photos/3171204/pexels-photo-3171204.jpeg',
