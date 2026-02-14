@@ -1,7 +1,7 @@
 import 'dart:developer';
 import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:dating/pages/chat/chating_list.dart';
+import 'package:dating/pages/chat/chat_list.dart';
 import 'package:dating/pages/home/categories/categories_page_6.dart';
 import 'package:dating/pages/home/for_you%20list.dart';
 import 'package:dating/pages/user_profile_page.dart';

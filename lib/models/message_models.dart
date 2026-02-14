@@ -1,23 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum MessageType {
-  text,
-  image,
-  video,
-  audio,
-  location,
-  document,
-  viewOnce,
-  reply
-}
-
-enum MessageStatus {
-  sending,
-  sent,
-  delivered,
-  read,
-  error
-}
+enum MessageType { text, image, video, audio, location, document, viewOnce }
+enum MessageStatus { sending, sent, delivered, read, error }
 
 class MessageModel {
   final String messageId;
@@ -31,11 +15,12 @@ class MessageModel {
   final Map<String, dynamic>? metadata;
   final String? replyToId;
   final MessageModel? replyToMessage;
-  final bool isDeleted;
   final bool isForwarded;
-  final List<Map<String, dynamic>> reactions;
+  final bool isDeleted;
+  final double? uploadProgress; // 0.0-1.0, only for sending
   final Map<String, dynamic>? viewOnceData;
-  final double? uploadProgress;
+  final List<Reaction> reactions;
+  final Map<String, DeliveryReceipt>? deliveryReceipts; // per user
 
   MessageModel({
     required this.messageId,
@@ -49,12 +34,47 @@ class MessageModel {
     this.metadata,
     this.replyToId,
     this.replyToMessage,
-    this.isDeleted = false,
     this.isForwarded = false,
-    this.reactions = const [],
-    this.viewOnceData,
+    this.isDeleted = false,
     this.uploadProgress,
+    this.viewOnceData,
+    this.reactions = const [],
+    this.deliveryReceipts,
   });
+
+  factory MessageModel.fromMap(Map<String, dynamic> map) {
+    return MessageModel(
+      messageId: map['messageId'] ?? '',
+      senderId: map['senderId'] ?? '',
+      receiverId: map['receiverId'] ?? '',
+      text: map['text'] ?? '',
+      timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      status: MessageStatus.values.firstWhere(
+        (e) => e.name == (map['status'] ?? 'sending'),
+        orElse: () => MessageStatus.sent,
+      ),
+      type: MessageType.values.firstWhere(
+        (e) => e.name == (map['type'] ?? 'text'),
+      ),
+      mediaUrls: List<String>.from(map['mediaUrls'] ?? []),
+      metadata: map['metadata'] as Map<String, dynamic>?,
+      replyToId: map['replyToId'],
+      isForwarded: map['isForwarded'] ?? false,
+      isDeleted: map['isDeleted'] ?? false,
+      uploadProgress: map['uploadProgress']?.toDouble(),
+      viewOnceData: map['viewOnceData'] as Map<String, dynamic>?,
+      reactions: (map['reactions'] as List? ?? [])
+          .map((r) => Reaction.fromMap(r))
+          .toList(),
+      deliveryReceipts: map['deliveryReceipts'] != null
+          ? Map.fromEntries(
+              (map['deliveryReceipts'] as Map<String, dynamic>).entries.map(
+                (e) => MapEntry(e.key, DeliveryReceipt.fromMap(e.value)),
+              ),
+            )
+          : null,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -68,37 +88,15 @@ class MessageModel {
       'mediaUrls': mediaUrls,
       'metadata': metadata,
       'replyToId': replyToId,
-      'isDeleted': isDeleted,
       'isForwarded': isForwarded,
-      'reactions': reactions,
+      'isDeleted': isDeleted,
+      'uploadProgress': uploadProgress,
       'viewOnceData': viewOnceData,
+      'reactions': reactions.map((r) => r.toMap()).toList(),
+      'deliveryReceipts': deliveryReceipts?.map(
+        (key, value) => MapEntry(key, value.toMap()),
+      ),
     };
-  }
-
-  factory MessageModel.fromMap(Map<String, dynamic> map, {MessageModel? replyTo}) {
-    return MessageModel(
-      messageId: map['messageId'] ?? '',
-      senderId: map['senderId'] ?? '',
-      receiverId: map['receiverId'] ?? '',
-      text: map['text'] ?? '',
-      timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      status: MessageStatus.values.firstWhere(
-        (e) => e.name == map['status'],
-        orElse: () => MessageStatus.sent,
-      ),
-      type: MessageType.values.firstWhere(
-        (e) => e.name == map['type'],
-        orElse: () => MessageType.text,
-      ),
-      mediaUrls: List<String>.from(map['mediaUrls'] ?? []),
-      metadata: map['metadata'],
-      replyToId: map['replyToId'],
-      replyToMessage: replyTo,
-      isDeleted: map['isDeleted'] ?? false,
-      isForwarded: map['isForwarded'] ?? false,
-      reactions: List<Map<String, dynamic>>.from(map['reactions'] ?? []),
-      viewOnceData: map['viewOnceData'],
-    );
   }
 
   MessageModel copyWith({
@@ -113,11 +111,12 @@ class MessageModel {
     Map<String, dynamic>? metadata,
     String? replyToId,
     MessageModel? replyToMessage,
-    bool? isDeleted,
     bool? isForwarded,
-    List<Map<String, dynamic>>? reactions,
-    Map<String, dynamic>? viewOnceData,
+    bool? isDeleted,
     double? uploadProgress,
+    Map<String, dynamic>? viewOnceData,
+    List<Reaction>? reactions,
+    Map<String, DeliveryReceipt>? deliveryReceipts,
   }) {
     return MessageModel(
       messageId: messageId ?? this.messageId,
@@ -131,11 +130,61 @@ class MessageModel {
       metadata: metadata ?? this.metadata,
       replyToId: replyToId ?? this.replyToId,
       replyToMessage: replyToMessage ?? this.replyToMessage,
-      isDeleted: isDeleted ?? this.isDeleted,
       isForwarded: isForwarded ?? this.isForwarded,
-      reactions: reactions ?? this.reactions,
-      viewOnceData: viewOnceData ?? this.viewOnceData,
+      isDeleted: isDeleted ?? this.isDeleted,
       uploadProgress: uploadProgress ?? this.uploadProgress,
+      viewOnceData: viewOnceData ?? this.viewOnceData,
+      reactions: reactions ?? this.reactions,
+      deliveryReceipts: deliveryReceipts ?? this.deliveryReceipts,
     );
+  }
+}
+
+class Reaction {
+  final String userId;
+  final String reaction;
+  final DateTime timestamp;
+
+  Reaction({
+    required this.userId,
+    required this.reaction,
+    required this.timestamp,
+  });
+
+  factory Reaction.fromMap(Map<String, dynamic> map) {
+    return Reaction(
+      userId: map['userId'] ?? '',
+      reaction: map['reaction'] ?? '',
+      timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'reaction': reaction,
+      'timestamp': Timestamp.fromDate(timestamp),
+    };
+  }
+}
+
+class DeliveryReceipt {
+  final DateTime? deliveredAt;
+  final DateTime? readAt;
+
+  DeliveryReceipt({this.deliveredAt, this.readAt});
+
+  factory DeliveryReceipt.fromMap(Map<String, dynamic> map) {
+    return DeliveryReceipt(
+      deliveredAt: (map['deliveredAt'] as Timestamp?)?.toDate(),
+      readAt: (map['readAt'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'deliveredAt': deliveredAt != null ? Timestamp.fromDate(deliveredAt!) : null,
+      'readAt': readAt != null ? Timestamp.fromDate(readAt!) : null,
+    };
   }
 }
